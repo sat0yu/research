@@ -22,7 +22,7 @@ int main(){
     test_for_wavelettree(wt_textsize, wt_alphabetsize);
 }
 
-int test_for_bitvector(int N){
+int test_for_bitvector(int N){//{{{
     for(int N_i=1; N_i<N; N_i<<=1){
         int M = N_i + (rand() % N_i);
 
@@ -120,9 +120,9 @@ int test_for_bitvector(int N){
     }
 
     return 0;
-};
+};//}}}
 
-int test_for_wavelettree(int length, int range){
+int test_for_wavelettree(int length, int range){//{{{
     for(int _i=2; _i<range; _i<<=1){
         int i = _i + (rand() % _i);
         for(int _j=1; _j<length; _j<<=1){
@@ -162,6 +162,6 @@ int test_for_wavelettree(int length, int range){
     }
 
     return 0;
-};
+};//}}}
 
 /* vim:set foldmethod=marker commentstring=//%s : */
