@@ -354,11 +354,23 @@ int WaveletTree::traverse_on_wavelet(int n_idx, char b){
 
 WaveletTree::WaveletTree(vector<int> _S){//{{{
     n = _S.size();
+    if( n > UB_TEXT_SIZE ){
+        fprintf(stderr,
+                "too large text. (the expected maximal size is %d)\n",
+                UB_TEXT_SIZE);
+        exit(1);
+    }
 
     //----- sort characters by bucket-sort -----
     vector<char> bucket(UB_ALPHABET_SIZE, 0);
     vector<int>::iterator it_S = _S.begin(), end_it_S = _S.end();
     for(sigma=0; it_S != end_it_S; ++it_S){
+        if( *it_S > UB_ALPHABET_SIZE ){
+            fprintf(stderr,
+                    "too large alphabet size. (the expected maximal size is %d)\n",
+                    UB_ALPHABET_SIZE);
+            exit(1);
+        }
         sigma += ( bucket[*it_S] > 0 ) ? 0 : 1;
         bucket[*it_S] = 1;
     }
