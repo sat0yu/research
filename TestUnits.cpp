@@ -24,12 +24,12 @@ int main(){
 
 int test_for_bitvector(int N){//{{{
     for(int N_i=1; N_i<N; N_i<<=1){
-        int M = N_i + (rand() % N_i);
+        int n = N_i + (rand() % N_i);
 
-        printf("\na test in the condition n=%d starts;\n", M);
+        printf("\na test in the condition n=%d starts;\n", n);
 
-        char *B = (char*)malloc((M+1)*sizeof(char));
-        for(int i=0; i<M; i++){
+        char *B = (char*)malloc((n+1)*sizeof(char));
+        for(int i=0; i<n; i++){
             B[i] = (rand() % 2) ? '1' : '0';
         }
         B[N_i] = '\0';
@@ -65,7 +65,7 @@ int test_for_bitvector(int N){//{{{
         // <a test for rank>
         result = true;
         int naive=0;
-        for(int i=0; i<strlen(B); ++i){
+        for(int i=0; i<=strlen(B); ++i){
             if( i > 0 ){ naive += ( B[i-1] - '0' ) ? 1 : 0; }
             int r = bv.rank1(i);
             if( r != naive ){
@@ -157,7 +157,54 @@ int test_for_wavelettree(int length, int range){//{{{
             // </a test for access>
             e_time = clock();
             duration = (double)(e_time - s_time) / (double)CLOCKS_PER_SEC;
-            printf("Acsess(i) test: OK\t %f [s]\n", duration);
+            printf("Acsess(i) test: OK\t %.10lf [s]\n", duration / S.size());
+
+            s_time = clock();
+            // <a test for rangemaxk>
+            result = true;
+            for(int k=1, end_k=S.size(); k<=end_k; k++){
+                for(int s=0, end_s=S.size()-k; s<=end_s; ++s){
+                    vector<int> naive(k);
+                    /* sort a substring of length k using bucket-sort */
+                    vector<char> bucket(UB_ALPHABET_SIZE, 0);
+                    for(int j=0; j<k; j++){
+                        if( j > UB_ALPHABET_SIZE ){
+                            fprintf(stderr,
+                                    "too large alphabet size. (the expected maximal size is %d)\n",
+                                    UB_ALPHABET_SIZE);
+                            exit(1);
+                        }
+                        bucket[ S[s+j] ] = 1;
+                    }
+                    vector<char>::iterator it = bucket.begin(), end_it = bucket.end();
+                    for(int d_idx=0; it != end_it; ++it){
+                        if( *it > 0 ){
+                            naive[d_idx++] = (int)distance(bucket.begin(), it);
+                        }
+                    }
+
+                    /* compare each encoded substrings */
+                    vector<int> code = wt.rangemaxk(s,s+k,k);
+                    if( naive != code ){
+                        printf("naive coding(%d, %d, %d): ", s, s+k, k);
+                        for(int j=0, j_end=naive.size(); j<j_end; j++){
+                            cout << naive[j] << " ";
+                        }
+                        cout << endl;
+                        printf("WT.rangemaxk(%d, %d, %d): ", s, s+k, k);
+                        for(int j=0, j_end=code.size(); j<j_end; j++){
+                            cout << code[j] << " ";
+                        }
+                        cout << endl;
+                        result = false;
+                    }
+                }
+            }
+            if(!result){ exit(1); }
+            // </a test for rangemaxk>
+            e_time = clock();
+            duration = (double)(e_time - s_time) / (double)CLOCKS_PER_SEC;
+            printf("Rangemaxk(s,e,k) test: OK\t %.10lf [s]\n", duration);
         }
     }
 

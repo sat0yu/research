@@ -2,6 +2,7 @@
 #include<fstream>
 #include<string>
 #include<vector>
+#include<queue>
 #include<stdlib.h>
 #include<string.h>
 #include<math.h>
@@ -315,6 +316,7 @@ public:
     ~WaveletTree(){};
     WaveletTree(vector<int>);
     int access(int);
+    vector<int> rangemaxk(int, int, int);
 };
 
 void WaveletTree::Node::constructBitVector(){//{{{
@@ -454,6 +456,13 @@ int WaveletTree::access(int i){//{{{
         }
     }
     return dict[c];
+};//}}}
+
+vector<int> WaveletTree::rangemaxk(int s, int e, int k){//{{{
+    vector<int> ret(k);
+    queue<int> que;
+
+    return ret;
 };//}}}
 
 /* vim:set foldmethod=marker commentstring=//%s : */
