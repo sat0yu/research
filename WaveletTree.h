@@ -121,7 +121,7 @@ void BitVector::initialize(size_bits N){//{{{
     while( l % s ){ l++; } /* make l become a multiple of s */
     len_B = (size_array)ceil( (int)n / (double)b ); /* |B[]| */
     len_S = (size_array)ceil( (int)n / (double)s ); /* |S[]| */
-    len_L = (size_array)ceil( (int)n / (double)l ); /* |L[]| */
+    len_L = (size_array)ceil( (int)n / (double)l ) + 1; /* |L[]|, for rank1(n), reserve more by 1 */
     len_P = (size_array)(1 << s); /* |P[0, 2^s)| */
 
     //----- check if each specified size is enough -----
@@ -143,22 +143,22 @@ void BitVector::initialize(size_bits N){//{{{
     }
 
     //----- show status -----
-//        printf("n: %d\n", (int)n);
-//        printf("# of bits in B, that are covered by L[i]:%d\n", (int)l);
-//        printf("# of bits in B, that are covered by S[i]:%d\n", (int)s);
-//        printf("len(B): %d, # of bits of B[i]: %d\n", (int)len_B, (int)b);
-//        printf("len(S): %d, # of bits of S[i]: %d (%d bits are required)\n", \
-//                (int)len_S, (int)bits_S, (int)required_bits_s );
-//        printf("len(L): %d, # of bits of L[i]: %d (%d bits are required)\n", \
-//                (int)len_L, (int)bits_L, (int)required_bits_l );
-//        printf("len(P): %d  # of bits of P[i]: %d (%d bits are required)\n", \
-//                (int)len_P, (int)bits_P, (int)required_bits_p);
+//    printf("n: %d\n", (int)n);
+//    printf("# of bits in B, that are covered by L[i]:%d\n", (int)l);
+//    printf("# of bits in B, that are covered by S[i]:%d\n", (int)s);
+//    printf("len(B): %d, # of bits of B[i]: %d\n", (int)len_B, (int)b);
+//    printf("len(S): %d, # of bits of S[i]: %d (%d bits are required)\n", \
+//            (int)len_S, (int)bits_S, (int)required_bits_s );
+//    printf("len(L): %d, # of bits of L[i]: %d (%d bits are required)\n", \
+//            (int)len_L, (int)bits_L, (int)required_bits_l );
+//    printf("len(P): %d  # of bits of P[i]: %d (%d bits are required)\n", \
+//            (int)len_P, (int)bits_P, (int)required_bits_p);
 
     //----- reserve mamories for B, L, S, and P -----
     B.resize( len_B, 0 );
-    L.resize( len_L );
-    S.resize( len_S );
-    P.resize( len_P );
+    L.resize( len_L, 0 );
+    S.resize( len_S, 0 );
+    P.resize( len_P, 0 );
 
     //----- initialize P[0,i) -----
     for(int i=0; i < len_P; ++i){
@@ -253,6 +253,8 @@ const char BitVector::access(int i){//{{{
 };
 
 int BitVector::rank1(int i){
+    if( i == n ){ return L[ len_L - 1 ]; }
+
     // (1) extract bits in B[i], that are covered by S[i]
     ULL bitseq = 0;
     int st = s * (i / s), en = st + s;
@@ -310,28 +312,48 @@ private:
     size_t sigma, n;
     vector<int> dict;
     vector<Node> nodes;
+    void showTree();
     pair<int, char> traverse_on_alphabet(int, int);
     int traverse_on_wavelet(int, char);
+    bool isLeaf(int);
+    bool isEmptyNode(int);
+    int idx2character(int);
 public:
     ~WaveletTree(){};
-    WaveletTree(vector<int>);
+    WaveletTree(vector<int>&);
     int access(int);
-    vector<int> rangemaxk(int, int, int);
+    void rangemink(int, int, int, vector<int>&);
 };
 
 void WaveletTree::Node::constructBitVector(){//{{{
     BV = new BitVector(BC);
-    n = BV->n;
 };
 WaveletTree::Node::Node(int n):
     max(0),
     th(0),
-    n(0),
     BV(NULL),
     BC(n)
 {};//}}}
 
-pair<int, char> WaveletTree::traverse_on_alphabet(int n_idx, int v){//{{{
+void WaveletTree::showTree(){//{{{
+    cout << endl << "dict[i]: ";
+    for(int i=0; i<dict.size(); i++){ cout << dict[i] << ", "; }
+    cout << endl;
+    size_bits log2sigma = (size_bits)ceil(log2(sigma));
+    for(int d=0; d<log2sigma; d++){
+        cout << d << "-generation" << endl;
+        for(int i=(1 << d); i<(1 << (d+1)) && !isEmptyNode(i); i++){
+            for(int j=d; j<log2sigma; j++){ cout << "\t"; }
+            printf("node(%d):", i);
+            for(int k=0; k<nodes[i].BV->n; k++){
+                cout << nodes[i].BV->access(k);
+            }
+        }
+        cout << endl;
+    }
+    cout << "illustrated." << endl;
+};
+pair<int, char> WaveletTree::traverse_on_alphabet(int n_idx, int v){
     if(n_idx >= nodes.size()){
         return pair<int, char>(-1, '0');
     }
@@ -352,9 +374,30 @@ int WaveletTree::traverse_on_wavelet(int n_idx, char b){
     }else{
         return n_idx << 1;
     }
+};
+bool WaveletTree::isLeaf(int n_idx){
+    /* internal nodes are stored in first half of nodes[] 
+     * while leaves are stored in second half.
+     * note: nodes.size() = 2*sigma */
+    return (n_idx < sigma) ? false : true;
+};
+bool WaveletTree::isEmptyNode(int n_idx){
+    return (nodes[n_idx].BC.tail_idx > 0) ? false : true;
+};
+int WaveletTree::idx2character(int n_idx){
+    /* leaves are stored in latter half of nodes[],
+     * and also stored in dict[0:sigma-1] */
+    if( n_idx < sigma ){
+        fprintf(stderr,
+                "nodes[%d] is not a leaf node\n",
+                n_idx);
+        exit(1);
+    }else{
+        return dict[n_idx - sigma];
+    }
 };//}}}
 
-WaveletTree::WaveletTree(vector<int> _S){//{{{
+WaveletTree::WaveletTree(vector<int>& _S){//{{{
     n = _S.size();
     if( n > UB_TEXT_SIZE ){
         fprintf(stderr,
@@ -413,20 +456,6 @@ WaveletTree::WaveletTree(vector<int> _S){//{{{
     }
     //printf("a wavelet tree is constructed.\n");
 
-    //----- show tree -----
-//        size_bits log2sigma = (size_bits)ceil(log2(sigma));
-//        for(int d=0; d<log2sigma; d++){
-//            for(int i=(1 << d); i<(1 << (d+1)); i++){
-//                for(int j=d; j<log2sigma; j++){ cout << "\t"; }
-//                if(i%2){ cout << "1:"; }
-//                else{ cout << "0:"; }
-//                for(int k=0; k<nodes[i].BC.tail_idx; k++){
-//                    cout << nodes[i].BC.access(k);
-//                }
-//            }
-//            cout << endl << endl;
-//        }
-
     //----- convert BitContainer to BitVector -----
     vector<Node>::iterator it_n=nodes.begin(), end_it_n=nodes.end();
     for(; it_n != end_it_n; ++it_n){
@@ -435,6 +464,9 @@ WaveletTree::WaveletTree(vector<int> _S){//{{{
         }
     }
     //printf("BitContainers are converted to BitVectors.\n");
+
+    //----- show tree -----
+    //showTree();
 };//}}}
 
 int WaveletTree::access(int i){//{{{
@@ -458,11 +490,44 @@ int WaveletTree::access(int i){//{{{
     return dict[c];
 };//}}}
 
-vector<int> WaveletTree::rangemaxk(int s, int e, int k){//{{{
-    vector<int> ret(k);
-    queue<int> que;
-
-    return ret;
-};//}}}
+class wt_queue_elem{
+public:
+    int n_idx, st, en;
+    wt_queue_elem(int _n_idx, int _st, int _en):
+        n_idx(_n_idx), st(_st), en(_en){}
+};
+struct rangemaxk_comparison{
+public:
+    bool operator () (wt_queue_elem* p1, wt_queue_elem* p2){
+        return p1->n_idx > p2->n_idx;
+    };
+};
+void WaveletTree::rangemink(int s, int e, int k, vector<int>& res){
+    priority_queue<wt_queue_elem*, vector<wt_queue_elem* >, rangemaxk_comparison> que;
+    que.push( new wt_queue_elem(1, s, e) );
+    for(int i=0; !que.empty() && i<k;){
+        const wt_queue_elem* elem = que.top();
+        int n_idx   = elem->n_idx,
+            st      = elem->st,
+            en      = elem->en;
+        if( isLeaf(n_idx) ){
+            for(int j=0, end_j=en-st, ch=idx2character(n_idx); j<end_j; ++j){
+                res[i++] = ch;
+            }
+        }else{
+            int ost = nodes[n_idx].BV->rank1(st),
+                oen = nodes[n_idx].BV->rank1(en),
+                zst = st - ost,
+                zen = en - oen;
+            if( oen - ost ){
+                que.push( new wt_queue_elem((n_idx<<1)+1, ost, oen) );
+            }
+            if( zen - zst ){
+                que.push( new wt_queue_elem((n_idx<<1), zst, zen) );
+            }
+        }
+        que.pop();
+    }
+};
 
 /* vim:set foldmethod=marker commentstring=//%s : */
