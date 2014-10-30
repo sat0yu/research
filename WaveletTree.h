@@ -97,7 +97,7 @@ private:
     vector<block_p> P; /* P: a dictionary of # of 1 in each bit-vector */
     void initialize(size_bits);
 public:
-    size_bits n;
+    size_bits n, _n;
     ~BitVector(){};
     BitVector(const BitVector&);
     BitVector(BitContainer&);
@@ -114,14 +114,18 @@ void BitVector::initialize(size_bits N){//{{{
         printf("BitVector initialization error\n");
         exit(1);
     }
-    n = N;
+    _n = N; /* store original bit length for binary-search */
+    for(int pow = 1, tmp = _n; /* make 'n' a power of 2 */
+            pow <= tmp;
+            pow <<= 1)
+    { n = ( pow << 1 ); }
     double log2n = log2( (int)n );
     s = (size_bits)MAX(1, ceil(log2n / 2.)); /* s = lg(n)/2 bits in B are covered by S[i] */
     l = (size_bits)MAX(2, (int)(log2n * log2n)); /* l = lg^2(n) bits in B are covered by L[i] */
     while( l % s ){ l++; } /* make l become a multiple of s */
     len_B = (size_array)ceil( (int)n / (double)b ); /* |B[]| */
     len_S = (size_array)ceil( (int)n / (double)s ); /* |S[]| */
-    len_L = (size_array)ceil( (int)n / (double)l ) + 1; /* |L[]|, for rank1(n), reserve more by 1 */
+    len_L = (size_array)ceil( (int)n / (double)l ); /* |L[]|, for rank1(n), reserve more by 1 */
     len_P = (size_array)(1 << s); /* |P[0, 2^s)| */
 
     //----- check if each specified size is enough -----
@@ -191,7 +195,7 @@ BitVector::BitVector(BitContainer &bc):
 
     //----- create bit vector -----
     L[0] = S[0] = 0;
-    for(int i=0, j=0, k=0; i < n; ++i){
+    for(int i=0, j=0, k=0, tail=bc.tail_idx; i < n; ++i){
         if( !( i % l ) ){
             ++j;
             if( j < len_L ){ L[j] = L[j-1]; };
@@ -203,7 +207,7 @@ BitVector::BitVector(BitContainer &bc):
             if( k < len_S ){ S[k] = S[k-1]; }
         }
 
-        if( bc.access(i) - '0' ){
+        if( i < tail && bc.access(i) - '0' ){
             B[ DIVIDE8(i) ] |= 1 << MOD8(i); /* regist bits from right to left */
             if( j < len_L ){ ++L[j]; }
             if( k < len_S ){ ++S[k]; }
@@ -226,7 +230,7 @@ BitVector::BitVector(const char* _B):
     /* i: the index of _B ('i' is NOT the position of a bit),
      * j: the index of L,
      * k: the index of S */
-    for(int i=0, j=0, k=0; i < n; ++i){
+    for(int i=0, j=0, k=0, _strlen=strlen(_B); i < n; ++i){
         if( !( i % l ) ){
             ++j;
             if( j < len_L ){ L[j] = L[j-1]; };
@@ -238,9 +242,7 @@ BitVector::BitVector(const char* _B):
             if( k < len_S ){ S[k] = S[k-1]; }
         }
 
-        if( _B[i] - '0' ){
-            /* |-B[i+1]-|-B[ i ]-|
-             * |87654321|87654321|*/
+        if( i < _strlen && _B[i] - '0' ){
             B[ DIVIDE8(i) ] |= 1 << MOD8(i); /* regist bits from right to left */
             if( j < len_L ){ ++L[j]; }
             if( k < len_S ){ ++S[k]; }
@@ -253,21 +255,19 @@ const char BitVector::access(int i){//{{{
 };
 
 int BitVector::rank1(int i){
-    if( i == n ){ return L[ len_L - 1 ]; }
-
     // (1) extract bits in B[i], that are covered by S[i]
     ULL bitseq = 0;
-    int st = s * (i / s), en = st + s;
+    int st = s * (i / s);
     for(int j=0; j<s; j++){
         if( B[ DIVIDE8(j + st) ] & ( 1 << MOD8(j + st) ) ){ bitseq |= (1 << j); }
     }
 
     // (2) create a mask with the same width of the bits
-    ULL mask = (1 << (i % s)) - 1;
+    //ULL mask = (1 << (i % s)) - 1;
     //ULL mask = 0;
     //for(int j=(i % s)-1; j >= 0; j--){ mask |= (1 << j); }
 
-    return L[ i / l ] + S[ i / s ] + P[ (int)(bitseq & mask) ];
+    return L[ i / l ] + S[ i / s ] + P[ (int)(bitseq & (1 << (i % s)) - 1) ];
 };
 
 int BitVector::rank0(int i){
@@ -275,7 +275,7 @@ int BitVector::rank0(int i){
 }
 
 int BitVector::select(int i){
-    int s=0, e=n-1, m, r;
+    int s=0, e=_n, m, r;
     while(s != e){
         m = (s+e)/2;
         r = rank1(m+1);
