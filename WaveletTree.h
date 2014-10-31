@@ -308,6 +308,7 @@ private:
         int max, th, n;
         BitVector *BV;
         BitContainer BC;
+        ~Node();
         Node(int);
         void constructBitVector();
     };
@@ -332,6 +333,9 @@ public:
 
 void WaveletTree::Node::constructBitVector(){//{{{
     BV = new BitVector(BC);
+};
+WaveletTree::Node::~Node(){
+    delete BV;
 };
 WaveletTree::Node::Node(int n):
     max(0),
@@ -507,55 +511,59 @@ public:
         return p1->n_idx > p2->n_idx;
     };
 };
-void WaveletTree::rangemink(int s, int e, int k, vector<int>& res){
+void WaveletTree::rangemink(int st, int en, int k, vector<int>& res){
     priority_queue<wt_queue_elem*, vector<wt_queue_elem* >, rangemaxk_comparison> que;
-    que.push( new wt_queue_elem(1, s, e) );
+    que.push( new wt_queue_elem(1, st, en) );
     for(int i=0; !que.empty() && i<k;){
-        const wt_queue_elem* elem = que.top();
-        int n_idx   = elem->n_idx,
-            st      = elem->st,
-            en      = elem->en;
-        if( isLeaf(n_idx) ){
-            for(int j=0, end_j=en-st, ch=idx2character(n_idx); j<end_j; ++j){
+        const wt_queue_elem* e = que.top();
+        if( isLeaf(e->n_idx) ){
+            for(int j=0, end_j=e->en - e->st, ch=idx2character(e->n_idx); j<end_j; ++j){
                 res[i++] = ch;
             }
         }else{
-            int ost = nodes[n_idx].BV->rank1(st),
-                oen = nodes[n_idx].BV->rank1(en),
-                zst = st - ost,
-                zen = en - oen;
+            int ost = nodes[e->n_idx].BV->rank1(e->st),
+                oen = nodes[e->n_idx].BV->rank1(e->en),
+                zst = e->st - ost,
+                zen = e->en - oen;
             if( oen - ost ){
-                que.push( new wt_queue_elem((n_idx<<1)+1, ost, oen) );
+                que.push( new wt_queue_elem((e->n_idx<<1)+1, ost, oen) );
             }
             if( zen - zst ){
-                que.push( new wt_queue_elem((n_idx<<1), zst, zen) );
+                que.push( new wt_queue_elem((e->n_idx<<1), zst, zen) );
             }
         }
         que.pop();
+        delete e;
+    }
+    while( !que.empty() ){
+        delete que.top();
+        que.pop();
     }
 };
-void WaveletTree::rangemink_hash(int s, int e, int k, map<int, int>& hash){
+void WaveletTree::rangemink_hash(int st, int en, int k, map<int, int>& hash){
     priority_queue<wt_queue_elem*, vector<wt_queue_elem* >, rangemaxk_comparison> que;
-    que.push( new wt_queue_elem(1, s, e) );
+    que.push( new wt_queue_elem(1, st, en) );
     for(int i=0; !que.empty() && i<k;){
-        const wt_queue_elem* elem = que.top();
-        int n_idx   = elem->n_idx,
-            st      = elem->st,
-            en      = elem->en;
-        if( isLeaf(n_idx) ){
-            i = hash[idx2character(n_idx)] = (i + en - st);
+        const wt_queue_elem* e = que.top();
+        if( isLeaf(e->n_idx) ){
+            i = hash[idx2character(e->n_idx)] = (i + e->en - e->st);
         }else{
-            int ost = nodes[n_idx].BV->rank1(st),
-                oen = nodes[n_idx].BV->rank1(en),
-                zst = st - ost,
-                zen = en - oen;
+            int ost = nodes[e->n_idx].BV->rank1(e->st),
+                oen = nodes[e->n_idx].BV->rank1(e->en),
+                zst = e->st - ost,
+                zen = e->en - oen;
             if( oen - ost ){
-                que.push( new wt_queue_elem((n_idx<<1)+1, ost, oen) );
+                que.push( new wt_queue_elem((e->n_idx<<1)+1, ost, oen) );
             }
             if( zen - zst ){
-                que.push( new wt_queue_elem((n_idx<<1), zst, zen) );
+                que.push( new wt_queue_elem((e->n_idx<<1), zst, zen) );
             }
         }
+        que.pop();
+        delete e;
+    }
+    while( !que.empty() ){
+        delete que.top();
         que.pop();
     }
 };
