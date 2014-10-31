@@ -1,7 +1,13 @@
+#ifndef OP
+#define OP
+#include "./order_preserving.h"
+#endif
+
 #include<iostream>
 #include<fstream>
 #include<string>
 #include<vector>
+#include<map>
 #include<queue>
 #include<stdlib.h>
 #include<string.h>
@@ -13,9 +19,6 @@
 #define MOD8(X) ((X) & 0x07)
 #define LSB(X) ((X) & 0x01)
 #define MAX(X,Y) ((X > Y) ? X : Y)
-
-#define UB_ALPHABET_SIZE 100000
-#define UB_TEXT_SIZE 1000000
 
 using namespace std;
 
@@ -323,6 +326,8 @@ public:
     WaveletTree(vector<int>&);
     int access(int);
     void rangemink(int, int, int, vector<int>&);
+    void rangemink_hash(int, int, int, map<int,int>&);
+    void createNatRepKgramVector(int, natRepKgramVector&);
 };
 
 void WaveletTree::Node::constructBitVector(){//{{{
@@ -527,6 +532,49 @@ void WaveletTree::rangemink(int s, int e, int k, vector<int>& res){
             }
         }
         que.pop();
+    }
+};
+void WaveletTree::rangemink_hash(int s, int e, int k, map<int, int>& hash){
+    priority_queue<wt_queue_elem*, vector<wt_queue_elem* >, rangemaxk_comparison> que;
+    que.push( new wt_queue_elem(1, s, e) );
+    for(int i=0; !que.empty() && i<k;){
+        const wt_queue_elem* elem = que.top();
+        int n_idx   = elem->n_idx,
+            st      = elem->st,
+            en      = elem->en;
+        if( isLeaf(n_idx) ){
+            i = hash[idx2character(n_idx)] = (i + en - st);
+        }else{
+            int ost = nodes[n_idx].BV->rank1(st),
+                oen = nodes[n_idx].BV->rank1(en),
+                zst = st - ost,
+                zen = en - oen;
+            if( oen - ost ){
+                que.push( new wt_queue_elem((n_idx<<1)+1, ost, oen) );
+            }
+            if( zen - zst ){
+                que.push( new wt_queue_elem((n_idx<<1), zst, zen) );
+            }
+        }
+        que.pop();
+    }
+};
+void WaveletTree::createNatRepKgramVector(int k, natRepKgramVector& res){
+    vector<int> kgram(k);
+    map<int, int> hash;
+    for(int i=0, end_i=n-k+1; i<end_i; i++){
+        hash.clear();
+        rangemink_hash(i, i+k, k, hash); /* hashing val -> order */
+
+        for(int j=0; j<k; j++){
+            kgram[j] = hash[ access(i+j) ]; /* create an encoded kgram */
+        }
+
+        if( res.find(kgram) == res.end() ){ /* regist the kgram */
+            res[kgram] = 1;
+        }else{
+            res[kgram]++;
+        }
     }
 };
 

@@ -1,7 +1,13 @@
+#ifndef OP
+#define OP
+#include "./order_preserving.h"
+#endif
+
 #include<iostream>
 #include<fstream>
 #include<string>
 #include<vector>
+#include<map>
 #include<algorithm>
 #include<stdlib.h>
 #include<string.h>
@@ -9,11 +15,13 @@
 #include<ctime>
 
 #include "./WaveletTree.h"
+#include "./op_kgram_naive.h"
 
 using namespace std;
 
 int test_for_bitvector(int);
 int test_for_wavelettree(int, int);
+void naive_natRepKgramVector(vector<int>&, int, natRepKgramVector&);
 
 int main(){
     srand(time(0));
@@ -136,6 +144,7 @@ int test_for_wavelettree(int length, int range){//{{{
             clock_t s_time, e_time;
             double duration;
             bool result;
+            int k = 10;
 
             s_time = clock();
             // <construst an instance>
@@ -163,40 +172,90 @@ int test_for_wavelettree(int length, int range){//{{{
             // <a test for rangemaxk>
             result = true;
             duration = 0.;
-            for(int k=1, end_k=5; k<=end_k; k++){
-                for(int s=0, end_s=S.size()-k; s<=end_s; ++s){
-                    vector<int> naive(k);
-                    for(int x=s, end_x=s+k, y=0; x<end_x;){ naive[y++] = S[x++]; }
-                    sort(naive.begin(), naive.end());
+            for(int s=0, end_s=S.size()-k; s<=end_s; ++s){
+                vector<int> naive(k);
+                for(int x=s, end_x=s+k, y=0; x<end_x;){ naive[y++] = S[x++]; }
+                sort(naive.begin(), naive.end());
 
-                    vector<int> code(k);
-                    s_time = clock();
-                    wt.rangemink(s, s+k, k, code);
-                    duration += (clock() - s_time);
+                vector<int> code(k);
+                s_time = clock();
+                wt.rangemink(s, s+k, k, code);
+                duration += (clock() - s_time);
 
-                    if( naive != code ){
-                        printf("naive coding(%d, %d, %d): ", s, s+k, k);
-                        for(int j=0, j_end=naive.size(); j<j_end; j++){
-                            cout << naive[j] << " ";
-                        }
-                        cout << endl;
-                        printf("WT.rangemaxk(%d, %d, %d): ", s, s+k, k);
-                        for(int j=0, j_end=code.size(); j<j_end; j++){
-                            cout << code[j] << " ";
-                        }
-                        cout << endl;
-                        result = false;
+                if( naive != code ){
+                    printf("naive coding(%d, %d, %d): ", s, s+k, k);
+                    for(int j=0, j_end=naive.size(); j<j_end; j++){
+                        cout << naive[j] << " ";
                     }
+                    cout << endl;
+                    printf("WT.rangemaxk(%d, %d, %d): ", s, s+k, k);
+                    for(int j=0, j_end=code.size(); j<j_end; j++){
+                        cout << code[j] << " ";
+                    }
+                    cout << endl;
+                    result = false;
                 }
             }
             if(!result){ exit(1); }
             // </a test for rangemaxk>
             duration = (double)(duration) / (double)CLOCKS_PER_SEC;
-            printf("Rangemaxk(s,e,1~5) test: OK\t %.10lf [s]\n", duration);
+            printf("Rangemaxk(s,e,%d) test: OK\t %.10lf [s]\n", k, duration);
+
+            // <a test for kgram>
+            clock_t naive_time;
+            double naive_duration = 0.;
+            result = true;
+            duration = 0.;
+            natRepKgramVector vec_naive, vec_wt;
+
+            naive_time = clock();
+            naive_natRepKgramVector(S, k, vec_naive);
+            naive_duration += (clock() - s_time);
+
+            s_time = clock();
+            wt.createNatRepKgramVector(k, vec_wt);
+            duration += (clock() - s_time);
+
+            if( vec_naive != vec_wt ){
+                printf("error: something worse happen.\n");
+                result = false;
+            }
+            if(!result){ exit(1); }
+            // </a test for kgram>
+            duration = (double)(duration) / (double)CLOCKS_PER_SEC;
+            naive_duration = (double)(naive_duration) / (double)CLOCKS_PER_SEC;
+            printf("natRepKgramVector(S,%d,vec) test: OK\t WT:%.10lf [s], naive:%.10lf\n", k, duration, naive_duration);
         }
     }
 
     return 0;
 };//}}}
+
+void naive_natRepKgramVector(vector<int>& S, int k, natRepKgramVector& res){//{{{
+    vector<int> substring(k), kgram(k);
+    map<int, int> hash;
+    for(int i=0, end_i=S.size()-k+1; i<end_i; i++){
+        for(int j=0; j<k; j++){ /* slice substring */
+            substring[j] = S[i+j];
+        }
+
+        stable_sort(substring.begin(), substring.end()); /* merge sort */
+
+        hash.clear();
+        for(int j=0; j<k; j++){
+            hash[ substring[j] ] = j+1; /* hashing val -> order */
+        }
+
+        for(int j=0; j<k; j++){
+            kgram[j] = hash[ S[i+j] ]; /* create an encoded kgram */
+        }
+
+        if( res.find(kgram) == res.end() ){ /* regist the kgram */
+            res[kgram] = 1;
+        }else{
+            res[kgram]++;
+        }
+    }
+}//}}}
 
 /* vim:set foldmethod=marker commentstring=//%s : */
