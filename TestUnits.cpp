@@ -21,6 +21,8 @@ using namespace std;
 int test_for_bitvector(int);
 int test_for_wavelettree(int, int, int);
 int comparison_kgram_vector_construct(int, int, int);
+void test_for_kgram_kernel(int, int, int);
+int naive_natRepKgram(vector<double>&, vector<double>&, int);
 void naive_natRepKgramVector(vector<int>&, int, natRepKgramVector&);
 
 int main(){
@@ -29,8 +31,8 @@ int main(){
     test_for_bitvector(bv_textsize);
     int wt_textsize = 1000, wt_alphabetsize = 1000, k=10;
     test_for_wavelettree(wt_textsize, wt_alphabetsize, k);
-
     comparison_kgram_vector_construct(wt_textsize, wt_alphabetsize, k);
+    test_for_kgram_kernel(wt_textsize, wt_alphabetsize, 100);
 }
 
 int test_for_bitvector(int N){//{{{
@@ -273,4 +275,75 @@ void naive_natRepKgramVector(vector<int>& S, int k, natRepKgramVector& res){//{{
     }
 }//}}}
 
+void test_for_kgram_kernel(int length, int alphabetsize, int max_k){
+    for(int N_i=1; N_i<length; N_i<<=1){
+        int n = N_i + (rand() % N_i); /* create random sequence */
+        int m = N_i + (rand() % N_i);
+        vector<double> S(n), T(m);
+
+        for(int i=0; i<n; i++){ S[i] = (float)rand() / (float)(RAND_MAX); }
+//        for(int i=0; i<n; i++){ cout << S[i] << " "; }
+//        cout << endl;
+        for(int i=0; i<m; i++){ T[i] = (float)rand() / (float)(RAND_MAX); }
+//        for(int i=0; i<m; i++){ cout << T[i] << " "; }
+//        cout << endl;
+
+        for(int k=1; k<max_k; k++){
+            cout << k << ":" << naive_natRepKgram(S, T, k) << endl;
+        }
+    }
+};
+
+int naive_natRepKgram(vector<double>& S, vector<double>& T, int k){//{{{
+    vector<double> substring(k);
+    vector<int> kgram(k);
+    map<double, int> hash;
+    natRepKgramVector vec;
+    int ret=0;
+    for(int i=0, end_i=S.size()-k+1; i<end_i; i++){
+        for(int j=0; j<k; j++){ /* slice substring */
+            substring[j] = S[i+j];
+        }
+
+        stable_sort(substring.begin(), substring.end()); /* merge sort */
+
+        hash.clear();
+        for(int j=0; j<k; j++){
+            hash[ substring[j] ] = j+1; /* hashing val -> order */
+        }
+
+        for(int j=0; j<k; j++){
+            kgram[j] = hash[ S[i+j] ]; /* create an encoded kgram */
+        }
+
+        if( vec.find(kgram) == vec.end() ){ /* regist the kgram */
+            vec[kgram] = 1;
+        }else{
+            vec[kgram]++;
+        }
+    }
+
+    for(int i=0, end_i=T.size()-k+1; i<end_i; i++){
+        for(int j=0; j<k; j++){ /* slice substring */
+            substring[j] = T[i+j];
+        }
+
+        stable_sort(substring.begin(), substring.end()); /* merge sort */
+
+        hash.clear();
+        for(int j=0; j<k; j++){
+            hash[ substring[j] ] = j+1; /* hashing val -> order */
+        }
+
+        for(int j=0; j<k; j++){
+            kgram[j] = hash[ T[i+j] ]; /* create an encoded kgram */
+        }
+
+        if( vec.find(kgram) != vec.end() ){ /* regist the kgram */
+            ret += vec[kgram];
+        }
+    }
+
+    return ret;
+}//}}}
 /* vim:set foldmethod=marker commentstring=//%s : */
