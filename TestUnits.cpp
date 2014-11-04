@@ -15,7 +15,6 @@
 #include<ctime>
 
 #include "./WaveletTree.h"
-#include "./op_kgram_naive.h"
 
 using namespace std;
 
@@ -24,11 +23,12 @@ int test_for_wavelettree(int, int);
 void naive_natRepKgramVector(vector<int>&, int, natRepKgramVector&);
 
 int main(){
-    srand(time(0));
-    int bv_textsize = 100000;
-    test_for_bitvector(bv_textsize);
-    int wt_textsize = 10000, wt_alphabetsize = 10000;
-    test_for_wavelettree(wt_textsize, wt_alphabetsize);
+    srand(0);
+    int wt_textsize = 10000, loop=100;
+    clock_t s_time;
+    test_for_wavelettree(wt_textsize, loop);
+    double duration = (double)(clock() - s_time) / (double)CLOCKS_PER_SEC;
+    printf("T=10000, loop=10; %.10lf\n", duration);
 }
 
 int test_for_bitvector(int N){//{{{
@@ -131,100 +131,59 @@ int test_for_bitvector(int N){//{{{
     return 0;
 };//}}}
 
-int test_for_wavelettree(int length, int range){//{{{
-    for(int _i=2; _i<range; _i<<=1){
-        int i = _i + (rand() % _i);
-        for(int _j=1; _j<length; _j<<=1){
-            int j = _j + (rand() % _j);
+int test_for_wavelettree(int length, int loop){//{{{
+    int array[] = {2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100,200,300,400,500,600,700,800,900,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000};
+    vector<int> sigma_list(array, array+(sizeof(array)/sizeof(int)));
+    vector<int>::iterator it = sigma_list.begin(), end_it = sigma_list.end();
+    for(; it!=end_it; it++){
+        int sigma=*it;
 
-            vector<int> S(j);
-            for(int k=0; k<j; k++){ S[k] = rand() % i; }
-            printf("\na test in the condition |T|=%d, |Σ|=%d starts;\n", j, i);
+        vector<int> S(length);
+        for(int k=0; k<length; k++){ S[k] = rand() % sigma; }
+        printf("\na test in the condition |T|=%d, |Σ|=%d starts;\n", length, sigma);
 
-            clock_t s_time, e_time;
-            double duration;
-            bool result;
-            int k = 10;
+        clock_t s_time, e_time;
+        double duration;
+        bool result;
 
+        for(int l=0; l<loop; l++){
             s_time = clock();
             // <construst an instance>
-            WaveletTree wt = WaveletTree(S);
+            WaveletTree wt(S);
             // </construst an instance>
-            e_time = clock();
-            duration = (double)(e_time - s_time) / (double)CLOCKS_PER_SEC;
-            printf("construction: OK \t %f [s]\n", duration);
+            duration += (clock() - s_time);
+        }
+        duration = (double)(duration) / (double)CLOCKS_PER_SEC;
+        printf("|T|=%d, |Σ|=%d; construction: OK \t %.10lf [s]\n", length, sigma, duration / loop);
 
-            s_time = clock();
-            // <a test for access>
-            result = true;
-            for(int i=0, end_i=S.size(); i<end_i; ++i){
-                if( S[i] != wt.access(i) ){
-                    printf("S[%d]=%d, WT.access[%d]=%d\n", i, S[i], i, wt.access(i));
-                    result = false;
-                }
-            }
-            if(!result){ exit(1); }
-            // </a test for access>
-            e_time = clock();
-            duration = (double)(e_time - s_time) / (double)CLOCKS_PER_SEC;
-            printf("Acsess(i) test: OK\t %.10lf [s]\n", duration / S.size());
-
-            // <a test for rangemaxk>
-            result = true;
-            duration = 0.;
-            for(int s=0, end_s=S.size()-k; s<=end_s; ++s){
-                vector<int> naive(k);
-                for(int x=s, end_x=s+k, y=0; x<end_x;){ naive[y++] = S[x++]; }
-                sort(naive.begin(), naive.end());
-
-                vector<int> code(k);
-                s_time = clock();
-                wt.rangemink(s, s+k, k, code);
-                duration += (clock() - s_time);
-
-                if( naive != code ){
-                    printf("naive coding(%d, %d, %d): ", s, s+k, k);
-                    for(int j=0, j_end=naive.size(); j<j_end; j++){
-                        cout << naive[j] << " ";
-                    }
-                    cout << endl;
-                    printf("WT.rangemaxk(%d, %d, %d): ", s, s+k, k);
-                    for(int j=0, j_end=code.size(); j<j_end; j++){
-                        cout << code[j] << " ";
-                    }
-                    cout << endl;
-                    result = false;
-                }
-            }
-            if(!result){ exit(1); }
-            // </a test for rangemaxk>
-            duration = (double)(duration) / (double)CLOCKS_PER_SEC;
-            printf("Rangemaxk(s,e,%d) test: OK\t %.10lf [s]\n", k, duration);
-
-            // <a test for kgram>
+        WaveletTree wt(S);
+        for(int k=1; k<length; k<<=1){
             clock_t naive_time;
             double naive_duration = 0.;
             result = true;
             duration = 0.;
-            natRepKgramVector vec_naive, vec_wt;
+            for(int l=0; l<loop; l++){
+                natRepKgramVector vec_naive, vec_wt;
 
-            naive_time = clock();
-            naive_natRepKgramVector(S, k, vec_naive);
-            naive_duration += (clock() - s_time);
+                naive_time = clock();
+                naive_natRepKgramVector(S, k, vec_naive);
+                naive_duration += (clock() - s_time);
 
-            s_time = clock();
-            wt.createNatRepKgramVector(k, vec_wt);
-            duration += (clock() - s_time);
+                s_time = clock();
+                wt.createNatRepKgramVector(k, vec_wt);
+                duration += (clock() - s_time);
 
-            if( vec_naive != vec_wt ){
-                printf("error: something worse happen.\n");
-                result = false;
+                if( vec_naive != vec_wt ){
+                    printf("error: something worse happen.\n");
+                    result = false;
+                }
+                if(!result){ exit(1); }
+                // </a test for kgram>
             }
-            if(!result){ exit(1); }
-            // </a test for kgram>
             duration = (double)(duration) / (double)CLOCKS_PER_SEC;
             naive_duration = (double)(naive_duration) / (double)CLOCKS_PER_SEC;
-            printf("natRepKgramVector(S,%d,vec) test: OK\t WT:%.10lf [s], naive:%.10lf\n", k, duration, naive_duration);
+            printf("|T|=%d, |Σ|=%d, k=%d; \t WT:%.10lf [s], naive:%.10lf [s]\n", length, sigma, k, duration/loop, naive_duration/loop);
+            cout << flush;
         }
     }
 

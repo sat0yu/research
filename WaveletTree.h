@@ -315,6 +315,7 @@ private:
 
     size_t sigma, n;
     vector<int> dict;
+    vector<int> pos_st, pos_en;
     vector<Node> nodes;
     void showTree();
     pair<int, char> traverse_on_alphabet(int, int);
@@ -474,6 +475,10 @@ WaveletTree::WaveletTree(vector<int>& _S){//{{{
     }
     //printf("BitContainers are converted to BitVectors.\n");
 
+    //----- reserve two arrays for tree search -----
+    pos_st.resize(nodes.size());
+    pos_en.resize(nodes.size());
+
     //----- show tree -----
     //showTree();
 };//}}}
@@ -541,29 +546,32 @@ void WaveletTree::rangemink(int st, int en, int k, vector<int>& res){
     }
 };
 void WaveletTree::rangemink_hash(int st, int en, int k, map<int, int>& hash){
-    priority_queue<wt_queue_elem*, vector<wt_queue_elem* >, rangemaxk_comparison> que;
-    que.push( new wt_queue_elem(1, st, en) );
+    priority_queue<int, vector<int>, greater<int> > que;
+    que.push(1);
+    pos_st[1] = st;
+    pos_en[1] = en;
     for(int i=0; !que.empty() && i<k;){
-        const wt_queue_elem* e = que.top();
-        if( isLeaf(e->n_idx) ){
-            i = hash[idx2character(e->n_idx)] = (i + e->en - e->st);
+        const int n_idx = que.top();
+        if( isLeaf(n_idx) ){
+            i = hash[idx2character(n_idx)] = (i + pos_en[n_idx] - pos_st[n_idx]);
         }else{
-            int ost = nodes[e->n_idx].BV->rank1(e->st),
-                oen = nodes[e->n_idx].BV->rank1(e->en),
-                zst = e->st - ost,
-                zen = e->en - oen;
+            int ost = nodes[n_idx].BV->rank1(pos_st[n_idx]),
+                oen = nodes[n_idx].BV->rank1(pos_en[n_idx]),
+                zst = pos_st[n_idx] - ost,
+                zen = pos_en[n_idx] - oen;
             if( oen - ost ){
-                que.push( new wt_queue_elem((e->n_idx<<1)+1, ost, oen) );
+                int r_child = (n_idx<<1)+1;
+                que.push(r_child);
+                pos_st[r_child] = ost;
+                pos_en[r_child] = oen;
             }
             if( zen - zst ){
-                que.push( new wt_queue_elem((e->n_idx<<1), zst, zen) );
+                int l_child = (n_idx<<1);
+                que.push(l_child);
+                pos_st[l_child] = zst;
+                pos_en[l_child] = zen;
             }
         }
-        que.pop();
-        delete e;
-    }
-    while( !que.empty() ){
-        delete que.top();
         que.pop();
     }
 };
