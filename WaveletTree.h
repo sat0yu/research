@@ -330,6 +330,7 @@ public:
     void rangemink(int, int, int, vector<int>&);
     void rangemink_hash(int, int, int, map<int,int>&);
     void createNatRepKgramVector(int, natRepKgramVector&);
+    void createRangeCountingKgramVector(int, rangeCountingKgramVector&);
 };
 
 void WaveletTree::Node::constructBitVector(){//{{{
@@ -587,4 +588,6 @@ void WaveletTree::createNatRepKgramVector(int k, natRepKgramVector& res){
     }
 };
 
+void WaveletTree::createRangeCountingKgramVector(int k, rangeCountingKgramVector& res){
+};
 /* vim:set foldmethod=marker commentstring=//%s : */

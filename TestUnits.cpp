@@ -22,6 +22,7 @@ int test_for_bitvector(int);
 int test_for_wavelettree(int, int, int);
 int comparison_kgram_vector_construct(int, int, int);
 void naive_natRepKgramVector(vector<int>&, int, natRepKgramVector&);
+void naive_rangeCountingKgramVector(vector<int>&, int, rangeCountingKgramVector&);
 
 int main(){
     srand(time(0));
@@ -240,6 +241,46 @@ int comparison_kgram_vector_construct(int length, int range, int k){//{{{
             duration = (double)(duration) / (double)CLOCKS_PER_SEC;
             naive_duration = (double)(naive_duration) / (double)CLOCKS_PER_SEC;
             printf("natRepKgramVector(S,%d,vec) test: OK\t WT:%.10lf [s], naive:%.10lf\n", k, duration, naive_duration);
+
+
+            // <a test for kgram using range counring rep.>
+            duration = naive_duration = 0.;
+            rangeCountingKgramVector naive_rc_vec, wt_rc_vec;
+
+            naive_time = clock();
+            naive_rangeCountingKgramVector(S, k, naive_rc_vec);
+            naive_duration += (clock() - s_time);
+
+            printf("- 1 ----------------------------------------\n");
+            cout << "S: ";
+            for(vector<int>::iterator it=S.begin(); it!=S.end(); it++){
+                cout << *it << " ";
+            }
+            cout << endl;
+            printf("- 2 ----------------------------------------\n");
+            map<vector<rc_code>, int>::iterator it=naive_rc_vec.begin();
+            for(;it!=naive_rc_vec.end(); it++){
+                vector<rc_code> vec=it->first;
+                for(vector<rc_code>::iterator it2=vec.begin(); it2!=vec.end(); it2++){
+                    printf("(%d, %d) ", it2->first, it2->second);
+                }
+                cout << ": " << it->second << endl;
+            }
+            printf("- 3 ----------------------------------------\n");
+
+
+            s_time = clock();
+            wt.createRangeCountingKgramVector(k, wt_rc_vec);
+            duration += (clock() - s_time);
+
+            if( naive_rc_vec != wt_rc_vec ){
+                printf("error: something worse happen.\n");
+                exit(1);
+            }
+            // </a test for kgram using range counting rep.>
+            duration = (double)(duration) / (double)CLOCKS_PER_SEC;
+            naive_duration = (double)(naive_duration) / (double)CLOCKS_PER_SEC;
+            printf("natRepKgramVector(S,%d,vec) test: OK\t WT:%.10lf [s], naive:%.10lf\n", k, duration, naive_duration);
         }
     }
 
@@ -273,4 +314,26 @@ void naive_natRepKgramVector(vector<int>& S, int k, natRepKgramVector& res){//{{
     }
 }//}}}
 
+void naive_rangeCountingKgramVector(vector<int>& S, int k, rangeCountingKgramVector& res){//{{{
+    vector<rc_code> kgram(k);
+    for(int i=0, end_i=S.size()-k+1; i<end_i; i++){
+        for(int j=0; j<k; j++){ /* for each a substring of length k */
+            int lt=0, eq=0;
+            for(int l=j-1; l>=0; l--){ /* range counting */
+                if(S[i+l] == S[i+j]){
+                    eq++;
+                }else if(S[i+l] < S[i+j]){
+                    lt++;
+                }
+            }
+            kgram[j] = rc_code(lt, eq);
+        }
+
+        if( res.find(kgram) == res.end() ){ /* regist the kgram */
+            res[kgram] = 1;
+        }else{
+            res[kgram]++;
+        }
+    }
+}//}}}
 /* vim:set foldmethod=marker commentstring=//%s : */
