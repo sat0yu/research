@@ -504,47 +504,39 @@ int WaveletTree::access(int i){//{{{
     return dict[c];
 };//}}}
 
-class wt_queue_elem{
-public:
-    int n_idx, st, en;
-    wt_queue_elem(int _n_idx, int _st, int _en):
-        n_idx(_n_idx), st(_st), en(_en){}
-};
-struct rangemaxk_comparison{
-public:
-    bool operator () (wt_queue_elem* p1, wt_queue_elem* p2){
-        return p1->n_idx > p2->n_idx;
-    };
-};
 void WaveletTree::rangemink(int st, int en, int k, vector<int>& res){
-    priority_queue<wt_queue_elem*, vector<wt_queue_elem* >, rangemaxk_comparison> que;
-    que.push( new wt_queue_elem(1, st, en) );
+    priority_queue<int, vector<int>, greater<int> > que;
+    que.push(1);
+    pos_st[1] = st;
+    pos_en[1] = en;
     for(int i=0; !que.empty() && i<k;){
-        const wt_queue_elem* e = que.top();
-        if( isLeaf(e->n_idx) ){
-            for(int j=0, end_j=e->en - e->st, ch=idx2character(e->n_idx); j<end_j; ++j){
+        const int n_idx = que.top();
+        if( isLeaf(n_idx) ){
+            for(int j=0, end_j=(pos_en[n_idx] - pos_st[n_idx]), ch=idx2character(n_idx); j<end_j; ++j){
                 res[i++] = ch;
             }
         }else{
-            int ost = nodes[e->n_idx].BV->rank1(e->st),
-                oen = nodes[e->n_idx].BV->rank1(e->en),
-                zst = e->st - ost,
-                zen = e->en - oen;
+            int ost = nodes[n_idx].BV->rank1(pos_st[n_idx]),
+                oen = nodes[n_idx].BV->rank1(pos_en[n_idx]),
+                zst = pos_st[n_idx] - ost,
+                zen = pos_en[n_idx] - oen;
             if( oen - ost ){
-                que.push( new wt_queue_elem((e->n_idx<<1)+1, ost, oen) );
+                int r_child = (n_idx<<1)+1;
+                que.push(r_child);
+                pos_st[r_child] = ost;
+                pos_en[r_child] = oen;
             }
             if( zen - zst ){
-                que.push( new wt_queue_elem((e->n_idx<<1), zst, zen) );
+                int l_child = (n_idx<<1);
+                que.push(l_child);
+                pos_st[l_child] = zst;
+                pos_en[l_child] = zen;
             }
         }
         que.pop();
-        delete e;
-    }
-    while( !que.empty() ){
-        delete que.top();
-        que.pop();
     }
 };
+
 void WaveletTree::rangemink_hash(int st, int en, int k, map<int, int>& hash){
     priority_queue<int, vector<int>, greater<int> > que;
     que.push(1);
@@ -575,6 +567,7 @@ void WaveletTree::rangemink_hash(int st, int en, int k, map<int, int>& hash){
         que.pop();
     }
 };
+
 void WaveletTree::createNatRepKgramVector(int k, natRepKgramVector& res){
     vector<int> kgram(k);
     map<int, int> hash;
