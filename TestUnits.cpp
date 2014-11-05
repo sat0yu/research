@@ -31,6 +31,7 @@ int main(){
     int wt_textsize = 1000, wt_alphabetsize = 1000, k=10;
     test_for_wavelettree(wt_textsize, wt_alphabetsize, k);
 
+    wt_textsize = 1000, wt_alphabetsize = 1000, k=10;
     comparison_kgram_vector_construct(wt_textsize, wt_alphabetsize, k);
 }
 
@@ -213,13 +214,22 @@ int comparison_kgram_vector_construct(int length, int range, int k){//{{{
         int i = _i + (rand() % _i);
         for(int _j=1; _j<length; _j<<=1){
             int j = _j + (rand() % _j);
+            if( k > j ){ continue; }
 
             vector<int> S(j);
             for(int l=0; l<j; l++){ S[l] = rand() % i; }
+            printf("|T|=%d, sigma=%d, k=%d\n", j, i, k);
 
             clock_t s_time, e_time, naive_time;
             double duration, naive_duration;
+
+            s_time = clock();
+            // <construst an instance>
             WaveletTree wt(S);
+            // </construst an instance>
+            e_time = clock();
+            duration = (double)(e_time - s_time) / (double)CLOCKS_PER_SEC;
+            printf("construction: OK \t %f [s]\n", duration);
 
             // <a test for kgram using natural rep.>
             duration = naive_duration = 0.;
@@ -251,24 +261,6 @@ int comparison_kgram_vector_construct(int length, int range, int k){//{{{
             naive_rangeCountingKgramVector(S, k, naive_rc_vec);
             naive_duration += (clock() - s_time);
 
-            printf("- 1 ----------------------------------------\n");
-            cout << "S: ";
-            for(vector<int>::iterator it=S.begin(); it!=S.end(); it++){
-                cout << *it << " ";
-            }
-            cout << endl;
-            printf("- 2 ----------------------------------------\n");
-            map<vector<rc_code>, int>::iterator it=naive_rc_vec.begin();
-            for(;it!=naive_rc_vec.end(); it++){
-                vector<rc_code> vec=it->first;
-                for(vector<rc_code>::iterator it2=vec.begin(); it2!=vec.end(); it2++){
-                    printf("(%d, %d) ", it2->first, it2->second);
-                }
-                cout << ": " << it->second << endl;
-            }
-            printf("- 3 ----------------------------------------\n");
-
-
             s_time = clock();
             wt.createRangeCountingKgramVector(k, wt_rc_vec);
             duration += (clock() - s_time);
@@ -280,7 +272,7 @@ int comparison_kgram_vector_construct(int length, int range, int k){//{{{
             // </a test for kgram using range counting rep.>
             duration = (double)(duration) / (double)CLOCKS_PER_SEC;
             naive_duration = (double)(naive_duration) / (double)CLOCKS_PER_SEC;
-            printf("natRepKgramVector(S,%d,vec) test: OK\t WT:%.10lf [s], naive:%.10lf\n", k, duration, naive_duration);
+            printf("rangeCountingKgramVector(S,%d,vec) test: OK\t WT:%.10lf [s], naive:%.10lf\n", k, duration, naive_duration);
         }
     }
 
