@@ -29,9 +29,9 @@ int main(){
     srand(time(0));
     int bv_textsize = 10000;
     test_for_bitvector(bv_textsize);
-    int wt_textsize = 1000, k=10;
+    int wt_textsize = 10000, k=10;
     test_for_wavelettree(wt_textsize, k);
-    //test_for_kgram_kernel(wt_textsize, 100);
+    test_for_kgram_kernel(wt_textsize, 10);
 }
 
 int test_for_bitvector(int N){//{{{
@@ -201,26 +201,25 @@ void naive_natRepKgramVector(vector<int>& S, int k, natRepKgramVector& res){//{{
     }
 }//}}}
 
-void test_for_kgram_kernel(int length, int max_k){
+void test_for_kgram_kernel(int length, int max_k){//{{{
     for(int N_i=1; N_i<length; N_i<<=1){
         int n = N_i + (rand() % N_i); /* create random sequence */
         int m = N_i + (rand() % N_i);
         vector<double> S(n), T(m);
 
         for(int i=0; i<n; i++){ S[i] = (float)rand() / (float)(RAND_MAX); }
-//        for(int i=0; i<n; i++){ cout << S[i] << " "; }
-//        cout << endl;
         for(int i=0; i<m; i++){ T[i] = (float)rand() / (float)(RAND_MAX); }
-//        for(int i=0; i<m; i++){ cout << T[i] << " "; }
-//        cout << endl;
 
         for(int k=1; k<max_k; k++){
             int naive = naive_natRepKgram(S, T, k);
             int wt = wavelettree_natRepKgram(S, T, k);
-            printf("%d:\tnaive=%d, wt=%d\n", k, naive, wt);
+            printf("S=%d,T=%d,k=%d:\tnaive=%d, wt=%d\n", n, m, k, naive, wt);
+            if(naive != wt){
+                exit(1);
+            }
         }
     }
-};
+};//}}}
 
 int naive_natRepKgram(vector<double>& S, vector<double>& T, int k){//{{{
     vector<double> substring(k);
@@ -275,10 +274,33 @@ int naive_natRepKgram(vector<double>& S, vector<double>& T, int k){//{{{
     return ret;
 }//}}}
 
-int wavelettree_natRepKgram(vector<double>& S, vector<double>& T, int k){
+int wavelettree_natRepKgram(vector<double>& S, vector<double>& T, int k){//{{{
     int ret=0, n = S.size(), m=T.size();
-    S.insert(S.end(), T.begin(), T.end()); /* concatenate two sequences */
-    WaveletTree wt(S);
+
+    vector<double> X; /* create a new vector concatenating S and T*/
+    copy(S.begin(), S.end(), back_inserter(X));
+    X.insert(X.end(), T.begin(), T.end());
+    WaveletTree wt(X);
+    //printf("S:%d, T:%d, X:%d, k:%d\n", n, m, X.size(), k);
+
+    natRepKgramVector vec; /* use 'map' to represent feature vector */
+    wt.createNatRepKgramVector(0, n, k, vec); /* create the feature vector of S */
+
+    map<double, int> hash;
+    vector<int> kgram(k);
+    for(int i=n, end_i=n+m-k+1; i<end_i; i++){
+        hash.clear();
+        wt.rangemink_hash(i, i+k, k, hash);
+        //printf("i:%d, i+k:%d, hash.size():%d\n", i, i+k, hash.size());
+        for(int j=0; j<k; j++){
+            kgram[j] = hash[ wt.access(i+j) ]; /* create an encoded kgram */
+        }
+
+        if( vec.find(kgram) != vec.end() ){ /* if the kgram exists, then add that count */
+            ret += vec[kgram];
+        }
+    }
+
     return ret;
-}
+}//}}}
 /* vim:set foldmethod=marker commentstring=//%s : */

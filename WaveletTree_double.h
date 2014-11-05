@@ -329,6 +329,7 @@ public:
     WaveletTree(vector<double>&);
     double access(int);
     void rangemink_hash(int, int, int, map<double,int>&);
+    void createNatRepKgramVector(int, int, int, natRepKgramVector&);
 };
 
 void WaveletTree::Node::constructBitVector(){//{{{
@@ -445,7 +446,7 @@ WaveletTree::WaveletTree(vector<double>& _S){//{{{
         nodes[i].max = (r_child < 0.) ? l_child : r_child;
         nodes[i].th = l_child;
     }
-    printf("an alphabet tree is constructed.\n");
+    //printf("an alphabet tree is constructed.\n");
 
     //----- construct wavelet tree -----
     for(int i=0, end_i=n; i<end_i; ++i){ /* regist characters, one by one */
@@ -456,7 +457,7 @@ WaveletTree::WaveletTree(vector<double>& _S){//{{{
             n_idx = ret.first;
         }
     }
-    printf("a wavelet tree is constructed.\n");
+    //printf("a wavelet tree is constructed.\n");
 
     //----- convert BitContainer to BitVector -----
     vector<Node>::iterator it_n=nodes.begin(), end_it_n=nodes.end();
@@ -465,7 +466,7 @@ WaveletTree::WaveletTree(vector<double>& _S){//{{{
             (*it_n).constructBitVector();
         }
     }
-    printf("BitContainers are converted to BitVectors.\n");
+    //printf("BitContainers are converted to BitVectors.\n");
 
     //----- reserve two arrays for tree search -----
     pos_st.resize(nodes.size());
@@ -494,6 +495,25 @@ double WaveletTree::access(int i){//{{{
         }
     }
     return dict[c];
+};//}}}
+
+void WaveletTree::createNatRepKgramVector(int st, int en, int k, natRepKgramVector& res){//{{{
+    vector<int> kgram(k);
+    map<double, int> hash;
+    for(int i=st, end_i=en-k+1; i<end_i; i++){
+        hash.clear();
+        rangemink_hash(i, i+k, k, hash); /* hashing val -> order */
+
+        for(int j=0; j<k; j++){
+            kgram[j] = hash[ access(i+j) ]; /* create an encoded kgram */
+        }
+
+        if( res.find(kgram) == res.end() ){ /* regist the kgram */
+            res[kgram] = 1;
+        }else{
+            res[kgram]++;
+        }
+    }
 };//}}}
 
 void WaveletTree::rangemink_hash(int st, int en, int k, map<double, int>& hash){//{{{
