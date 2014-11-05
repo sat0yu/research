@@ -547,4 +547,35 @@ void WaveletTree::rangemink_hash(int st, int en, int k, map<double, int>& hash){
     }
 };//}}}
 
+
+int op_kgram(vector<double>& S, vector<double>& T, int k){//{{{
+    int ret=0, n = S.size(), m=T.size();
+
+    vector<double> X; /* create a new vector concatenating S and T*/
+    copy(S.begin(), S.end(), back_inserter(X));
+    X.insert(X.end(), T.begin(), T.end());
+    WaveletTree wt(X);
+    //printf("S:%d, T:%d, X:%d, k:%d\n", n, m, X.size(), k);
+
+    natRepKgramVector vec; /* use 'map' to represent feature vector */
+    wt.createNatRepKgramVector(0, n, k, vec); /* create the feature vector of S */
+
+    map<double, int> hash;
+    vector<int> kgram(k);
+    for(int i=n, end_i=n+m-k+1; i<end_i; i++){
+        hash.clear();
+        wt.rangemink_hash(i, i+k, k, hash);
+        //printf("i:%d, i+k:%d, hash.size():%d\n", i, i+k, hash.size());
+        for(int j=0; j<k; j++){
+            kgram[j] = hash[ wt.access(i+j) ]; /* create an encoded kgram */
+        }
+
+        if( vec.find(kgram) != vec.end() ){ /* if the kgram exists, then add that count */
+            ret += vec[kgram];
+        }
+    }
+
+    return ret;
+}//}}}
+
 /* vim:set foldmethod=marker commentstring=//%s : */
