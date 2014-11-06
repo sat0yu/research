@@ -317,19 +317,22 @@ private:
     vector<int> dict;
     vector<int> pos_st, pos_en;
     vector<Node> nodes;
-    void showTree();
-    pair<int, char> traverse_on_alphabet(int, int);
-    int traverse_on_wavelet(int, char);
-    bool isLeaf(int);
-    bool isEmptyNode(int);
-    int idx2character(int);
+    void showTree() const;
+    pair<int, char> traverse_on_alphabet(int, int) const;
+    int traverse_on_wavelet(int, char) const;
+    bool isLeaf(int) const;
+    bool isEmptyNode(int) const;
+    int idx2character(int) const;
 public:
     ~WaveletTree(){};
     WaveletTree(vector<int>&);
-    int access(int);
+    int access(int) const;
     void rangemink(int, int, int, vector<int>&);
     void rangemink_hash(int, int, int, map<int,int>&);
     void createNatRepKgramVector(int, natRepKgramVector&);
+    int rankLessThan(int, int, int) const;
+    int rangefreq(int, int, int, int) const;
+    void createRangeCountingKgramVector(int, rangeCountingKgramVector&);
 };
 
 void WaveletTree::Node::constructBitVector(){//{{{
@@ -345,7 +348,7 @@ WaveletTree::Node::Node(int n):
     BC(n)
 {};//}}}
 
-void WaveletTree::showTree(){//{{{
+void WaveletTree::showTree() const{//{{{
     cout << endl << "dict[i]: ";
     for(int i=0; i<dict.size(); i++){ cout << dict[i] << ", "; }
     cout << endl;
@@ -363,38 +366,38 @@ void WaveletTree::showTree(){//{{{
     }
     cout << "illustrated." << endl;
 };
-pair<int, char> WaveletTree::traverse_on_alphabet(int n_idx, int v){
+pair<int, char> WaveletTree::traverse_on_alphabet(int n_idx, int v) const{
     if(n_idx >= nodes.size()){
         return pair<int, char>(-1, '0');
     }
     int ch_idx;
     char direc;
     if( v <= nodes[n_idx].th ){
-        ch_idx = 2 * n_idx;
+        ch_idx = (n_idx << 1);
         direc = '0';
     }else{
-        ch_idx = 2 * n_idx + 1;
+        ch_idx = (n_idx << 1) + 1;
         direc = '1';
     }
     return pair<int, char>(ch_idx, direc);
 };
-int WaveletTree::traverse_on_wavelet(int n_idx, char b){
+int WaveletTree::traverse_on_wavelet(int n_idx, char b) const{
     if( b - '0' > 0 ){
         return (n_idx << 1) + 1;
     }else{
         return n_idx << 1;
     }
 };
-bool WaveletTree::isLeaf(int n_idx){
+bool WaveletTree::isLeaf(int n_idx) const{
     /* internal nodes are stored in first half of nodes[] 
      * while leaves are stored in second half.
      * note: nodes.size() = 2*sigma */
     return (n_idx < sigma) ? false : true;
 };
-bool WaveletTree::isEmptyNode(int n_idx){
+bool WaveletTree::isEmptyNode(int n_idx) const{
     return (nodes[n_idx].BC.tail_idx > 0) ? false : true;
 };
-int WaveletTree::idx2character(int n_idx){
+int WaveletTree::idx2character(int n_idx) const{
     /* leaves are stored in latter half of nodes[],
      * and also stored in dict[0:sigma-1] */
     if( n_idx < sigma ){
@@ -483,7 +486,7 @@ WaveletTree::WaveletTree(vector<int>& _S){//{{{
     //showTree();
 };//}}}
 
-int WaveletTree::access(int i){//{{{
+int WaveletTree::access(int i) const{//{{{
     int c=0;
     char b;
     for(
@@ -504,7 +507,7 @@ int WaveletTree::access(int i){//{{{
     return dict[c];
 };//}}}
 
-void WaveletTree::rangemink(int st, int en, int k, vector<int>& res){
+void WaveletTree::rangemink(int st, int en, int k, vector<int>& res){//{{{
     priority_queue<int, vector<int>, greater<int> > que;
     que.push(1);
     pos_st[1] = st;
@@ -535,9 +538,9 @@ void WaveletTree::rangemink(int st, int en, int k, vector<int>& res){
         }
         que.pop();
     }
-};
+};//}}}
 
-void WaveletTree::rangemink_hash(int st, int en, int k, map<int, int>& hash){
+void WaveletTree::rangemink_hash(int st, int en, int k, map<int, int>& hash){//{{{
     priority_queue<int, vector<int>, greater<int> > que;
     que.push(1);
     pos_st[1] = st;
@@ -566,9 +569,9 @@ void WaveletTree::rangemink_hash(int st, int en, int k, map<int, int>& hash){
         }
         que.pop();
     }
-};
+};//}}}
 
-void WaveletTree::createNatRepKgramVector(int k, natRepKgramVector& res){
+void WaveletTree::createNatRepKgramVector(int k, natRepKgramVector& res){//{{{
     vector<int> kgram(k);
     map<int, int> hash;
     for(int i=0, end_i=n-k+1; i<end_i; i++){
@@ -577,6 +580,53 @@ void WaveletTree::createNatRepKgramVector(int k, natRepKgramVector& res){
 
         for(int j=0; j<k; j++){
             kgram[j] = hash[ access(i+j) ]; /* create an encoded kgram */
+        }
+
+        if( res.find(kgram) == res.end() ){ /* regist the kgram */
+            res[kgram] = 1;
+        }else{
+            res[kgram]++;
+        }
+    }
+};//}}}
+
+int WaveletTree::rankLessThan(int c, int st, int en) const{
+    int rank=0, n_idx=1, ost, oen;
+    while( !isLeaf(n_idx) ){
+        ost = nodes[n_idx].BV->rank1(st),
+        oen = nodes[n_idx].BV->rank1(en);
+        pair<int, char> child = traverse_on_alphabet(n_idx, c);
+        n_idx = child.first;
+        if(child.second - '0'){
+            rank += en - st - oen + ost;
+            st = ost;
+            en = oen;
+        }else{
+            st = st - ost;
+            en = en - oen;
+        }
+        if(st == en){ return rank; }
+    }
+    if( idx2character(n_idx) < c ){
+        return rank + en - st;
+    }else{
+        return rank;
+    }
+};
+
+int WaveletTree::rangefreq(int st, int en, int x, int y) const{
+    if( !( (x < y) && (st < en) ) ){ return 0; }
+    return rankLessThan(y, st, en) - rankLessThan(x, st, en);
+};
+
+void WaveletTree::createRangeCountingKgramVector(int k, rangeCountingKgramVector& res){
+    vector<rc_code> kgram(k);
+    for(int i=0, end_i=n-k+1; i<end_i; i++){
+        for( int j=0, c=access(i+j); j<k; c=access(i+(++j)) ){
+            kgram[j] = rc_code(
+                        rangefreq(i, i+j, 0, c),
+                        rangefreq(i, i+j, c, c+1)
+                    );
         }
 
         if( res.find(kgram) == res.end() ){ /* regist the kgram */
