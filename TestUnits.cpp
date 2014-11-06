@@ -220,7 +220,7 @@ int comparison_kgram_vector_construct(int length, int range, int k){//{{{
             for(int l=0; l<j; l++){ S[l] = rand() % i; }
             printf("|T|=%d, sigma=%d, k=%d\n", j, i, k);
 
-            clock_t s_time, e_time, naive_time;
+            clock_t s_time, e_time;
             double duration, naive_duration;
 
             s_time = clock();
@@ -235,7 +235,7 @@ int comparison_kgram_vector_construct(int length, int range, int k){//{{{
             duration = naive_duration = 0.;
             natRepKgramVector naive_nat_vec, wt_nat_vec;
 
-            naive_time = clock();
+            s_time = clock();
             naive_natRepKgramVector(S, k, naive_nat_vec);
             naive_duration += (clock() - s_time);
 
@@ -257,7 +257,7 @@ int comparison_kgram_vector_construct(int length, int range, int k){//{{{
             duration = naive_duration = 0.;
             rangeCountingKgramVector naive_rc_vec, wt_rc_vec;
 
-            naive_time = clock();
+            s_time = clock();
             naive_rangeCountingKgramVector(S, k, naive_rc_vec);
             naive_duration += (clock() - s_time);
 
