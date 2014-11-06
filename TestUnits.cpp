@@ -230,27 +230,27 @@ int comparison_kgram_vector_construct(int length, int range, int k_max){//{{{
                 // </construst an instance>
                 construct_duration += (clock() - s_time);
 
-                // <a test for kgram using range counring rep.>
-                rangeCountingKgramVector naive_rc_vec, wt_rc_vec;
+                // <a test for kgram using natural rep.>
+                natRepKgramVector naive_nat_vec, wt_nat_vec;
 
                 s_time = clock();
-                naive_rangeCountingKgramVector(S, k, naive_rc_vec);
+                naive_natRepKgramVector(S, k, naive_nat_vec);
                 naive_duration += (clock() - s_time);
 
                 s_time = clock();
-                wt.createRangeCountingKgramVector(S, k, wt_rc_vec);
+                wt.createNatRepKgramVector(k, wt_nat_vec);
                 wt_duration += (clock() - s_time);
 
-                if( naive_rc_vec != wt_rc_vec ){
+                if( naive_nat_vec != wt_nat_vec ){
                     printf("error: something worse happen.\n");
                     exit(1);
                 }
             }
-            // </a test for kgram using range counting rep.>
+            // </a test for kgram using natural rep.>
             construct_duration = (double)(construct_duration) / (double)CLOCKS_PER_SEC;
             wt_duration = (double)(wt_duration) / (double)CLOCKS_PER_SEC;
             naive_duration = (double)(naive_duration) / (double)CLOCKS_PER_SEC;
-            printf("|T|=%d, sigma=%d, k=%d, rangeCountingKgramVector(S,%d,vec) test: OK\t Const.:%.10lf [s], WT:%.10lf [s], naive:%.10lf\n", 
+            printf("|T|=%d, sigma=%d, k=%d, natRepKgramVector(S,%d,vec) test: OK\t Const.:%.10lf [s], WT:%.10lf [s], naive:%.10lf\n", 
                     j, i, k, k, construct_duration / loop, wt_duration / loop, naive_duration / loop);
         }
     }
