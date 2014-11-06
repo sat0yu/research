@@ -25,13 +25,8 @@ void naive_natRepKgramVector(vector<int>&, int, natRepKgramVector&);
 void naive_rangeCountingKgramVector(vector<int>&, int, rangeCountingKgramVector&);
 
 int main(){
-    srand(time(0));
-    int bv_textsize = 10000;
-    test_for_bitvector(bv_textsize);
-    int wt_textsize = 1000, wt_alphabetsize = 1000, k=10;
-    test_for_wavelettree(wt_textsize, wt_alphabetsize, k);
-
-    wt_textsize = 1000, wt_alphabetsize = 1000, k=10;
+    srand(0);
+    int wt_textsize = 10000, wt_alphabetsize = 1000, k=10;
     comparison_kgram_vector_construct(wt_textsize, wt_alphabetsize, k);
 }
 
@@ -209,70 +204,54 @@ int test_for_wavelettree(int length, int range, int k){//{{{
     return 0;
 };//}}}
 
-int comparison_kgram_vector_construct(int length, int range, int k){//{{{
-    for(int _i=2; _i<range; _i<<=1){
-        int i = _i + (rand() % _i);
-        for(int _j=1; _j<length; _j<<=1){
-            int j = _j + (rand() % _j);
-            if( k > j ){ continue; }
+int comparison_kgram_vector_construct(int length, int range, int k_max){//{{{
+    int array_sigma[] = {2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100,200,300,400,500,600,700,800,900,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000};
+    vector<int> sigma_list(array_sigma, array_sigma+(sizeof(array_sigma)/sizeof(int)));
+    for(vector<int>::iterator it=sigma_list.begin(); it!=sigma_list.end(); it++){
+        int i= *it;
+        int j= length;
 
-            vector<int> S(j);
-            for(int l=0; l<j; l++){ S[l] = rand() % i; }
-            printf("|T|=%d, sigma=%d, k=%d\n", j, i, k);
+        int array_k[] = {2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100,200,300,400,500,600,700,800,900,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000};
+        vector<int> k_list(array_k, array_k+(sizeof(array_k)/sizeof(int)));
+        for(vector<int>::iterator it_k=k_list.begin(); it_k!=k_list.end(); it_k++){
+            int k= *it_k;
+            clock_t s_time;
+            double wt_duration=0., naive_duration=0, construct_duration=0.;
 
-            clock_t s_time, e_time;
-            double duration, naive_duration;
+            int loop=100;
+            for(int l=0; l<loop; l++){
+                vector<int> S(j);
+                for(int l=0; l<j; l++){ S[l] = rand() % i; }
+                // printf("|T|=%d, sigma=%d, k=%d\n", j, i, k);
 
-            s_time = clock();
-            // <construst an instance>
-            WaveletTree wt(S);
-            // </construst an instance>
-            e_time = clock();
-            duration = (double)(e_time - s_time) / (double)CLOCKS_PER_SEC;
-            printf("construction: OK \t %f [s]\n", duration);
+                s_time = clock();
+                // <construst an instance>
+                WaveletTree wt(S);
+                // </construst an instance>
+                construct_duration += (clock() - s_time);
 
-            // <a test for kgram using natural rep.>
-            duration = naive_duration = 0.;
-            natRepKgramVector naive_nat_vec, wt_nat_vec;
+                // <a test for kgram using range counring rep.>
+                rangeCountingKgramVector naive_rc_vec, wt_rc_vec;
 
-            s_time = clock();
-            naive_natRepKgramVector(S, k, naive_nat_vec);
-            naive_duration += (clock() - s_time);
+                s_time = clock();
+                naive_rangeCountingKgramVector(S, k, naive_rc_vec);
+                naive_duration += (clock() - s_time);
 
-            s_time = clock();
-            wt.createNatRepKgramVector(k, wt_nat_vec);
-            duration += (clock() - s_time);
+                s_time = clock();
+                wt.createRangeCountingKgramVector(S, k, wt_rc_vec);
+                wt_duration += (clock() - s_time);
 
-            if( naive_nat_vec != wt_nat_vec ){
-                printf("error: something worse happen.\n");
-                exit(1);
-            }
-            // </a test for kgram using natural rep.>
-            duration = (double)(duration) / (double)CLOCKS_PER_SEC;
-            naive_duration = (double)(naive_duration) / (double)CLOCKS_PER_SEC;
-            printf("natRepKgramVector(S,%d,vec) test: OK\t WT:%.10lf [s], naive:%.10lf\n", k, duration, naive_duration);
-
-
-            // <a test for kgram using range counring rep.>
-            duration = naive_duration = 0.;
-            rangeCountingKgramVector naive_rc_vec, wt_rc_vec;
-
-            s_time = clock();
-            naive_rangeCountingKgramVector(S, k, naive_rc_vec);
-            naive_duration += (clock() - s_time);
-
-            s_time = clock();
-            wt.createRangeCountingKgramVector(k, wt_rc_vec);
-            duration += (clock() - s_time);
-
-            if( naive_rc_vec != wt_rc_vec ){
-                printf("error: something worse happen.\n");
-                exit(1);
+                if( naive_rc_vec != wt_rc_vec ){
+                    printf("error: something worse happen.\n");
+                    exit(1);
+                }
             }
             // </a test for kgram using range counting rep.>
-            duration = (double)(duration) / (double)CLOCKS_PER_SEC;
+            construct_duration = (double)(construct_duration) / (double)CLOCKS_PER_SEC;
+            wt_duration = (double)(wt_duration) / (double)CLOCKS_PER_SEC;
             naive_duration = (double)(naive_duration) / (double)CLOCKS_PER_SEC;
-            printf("rangeCountingKgramVector(S,%d,vec) test: OK\t WT:%.10lf [s], naive:%.10lf\n", k, duration, naive_duration);
+            printf("|T|=%d, sigma=%d, k=%d, rangeCountingKgramVector(S,%d,vec) test: OK\t Const.:%.10lf [s], WT:%.10lf [s], naive:%.10lf\n", 
+                    j, i, k, k, construct_duration / loop, wt_duration / loop, naive_duration / loop);
         }
     }
 

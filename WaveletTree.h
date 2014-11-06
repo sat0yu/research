@@ -332,7 +332,7 @@ public:
     void createNatRepKgramVector(int, natRepKgramVector&);
     int rankLessThan(int, int, int) const;
     int rangefreq(int, int, int, int) const;
-    void createRangeCountingKgramVector(int, rangeCountingKgramVector&);
+    void createRangeCountingKgramVector(vector<int>&, int, rangeCountingKgramVector&);
 };
 
 void WaveletTree::Node::constructBitVector(){//{{{
@@ -619,10 +619,10 @@ int WaveletTree::rangefreq(int st, int en, int x, int y) const{
     return rankLessThan(y, st, en) - rankLessThan(x, st, en);
 };
 
-void WaveletTree::createRangeCountingKgramVector(int k, rangeCountingKgramVector& res){
+void WaveletTree::createRangeCountingKgramVector(vector<int>& S, int k, rangeCountingKgramVector& res){
     vector<rc_code> kgram(k);
     for(int i=0, end_i=n-k+1; i<end_i; i++){
-        for( int j=0, c=access(i+j); j<k; c=access(i+(++j)) ){
+        for( int j=0, c=S[i+j]; j<k; c=S[i+(++j)] ){
             kgram[j] = rc_code(
                         rangefreq(i, i+j, 0, c),
                         rangefreq(i, i+j, c, c+1)
