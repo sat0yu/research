@@ -319,7 +319,6 @@ private:
     vector<int> pos_st, pos_en;
     vector<Node> nodes;
     void showTree() const;
-    pair<int, char> traverse_on_alphabet(int, int) const;
     int traverse_on_wavelet(int, char) const;
     bool isLeaf(int) const;
     bool isEmptyNode(int) const;
@@ -367,16 +366,6 @@ void WaveletTree::showTree() const{//{{{
         cout << endl;
     }
     cout << "illustrated." << endl;
-};//}}}
-
-pair<int, char> WaveletTree::traverse_on_alphabet(int n_idx, int v) const{//{{{
-    if( n_idx >= num_nodes ){
-        return pair<int, char>(-1, '0');
-    }else if( v <= nodes[n_idx].th ){
-        return pair<int, char>((n_idx << 1), '0');
-    }else{
-        return pair<int, char>((n_idx << 1) + 1, '1');
-    }
 };//}}}
 
 int WaveletTree::traverse_on_wavelet(int n_idx, char b) const{//{{{
@@ -450,24 +439,9 @@ WaveletTree::WaveletTree(vector<int>& _S){//{{{
     }
     //printf("dectionaries are created.\n");
 
-    //----- construct alphabet tree -----
+    //----- construct wavelet tree -----
     num_nodes = (sigma << 1); /* using 1-origin indices */
     nodes.resize(num_nodes, n);
-    for(int i=0; i<sigma; i++){
-        /* later half of nodes[] corresspond to leaves*/
-        nodes[i+sigma].max = dict[i];
-        nodes[i+sigma].th = dict[i];
-    }
-    for(int i=sigma-1; i>0; i--){
-        /* create non-leaf nodes in a way like merge sort */
-        int l_child = nodes[(i << 1)].max, r_child = nodes[(i << 1)+1].max;
-        /* if the max of child is 0(empty), then use left child */
-        nodes[i].max = (r_child == 0) ? l_child : r_child;
-        nodes[i].th = l_child;
-    }
-    //printf("an alphabet tree is constructed.\n");
-
-    //----- construct wavelet tree -----
     for(int i=0, end_i=_S.size(); i<end_i; ++i){ /* regist characters, one by one */
         int path = inverse_dict[ _S[i] ];
         for(int n_idx=1, d=log2sigma-1; d >= 0; d--){
@@ -634,30 +608,6 @@ int WaveletTree::rankLessThan(int c, int st, int en) const{//{{{
         }
     }
     return rank;
-};//}}}
-
-int WaveletTree::rankLessThan_forany(int c, int st, int en) const{//{{{
-    int rank=0, n_idx=1, ost, oen;
-    while( !isLeaf(n_idx) ){
-        ost = nodes[n_idx].BV->rank1(st),
-        oen = nodes[n_idx].BV->rank1(en);
-        pair<int, char> child = traverse_on_alphabet(n_idx, c);
-        n_idx = child.first;
-        if(child.second - '0'){
-            rank += en - st - oen + ost;
-            st = ost;
-            en = oen;
-        }else{
-            st = st - ost;
-            en = en - oen;
-        }
-        if(st == en){ return rank; }
-    }
-    if( idx2character(n_idx) < c ){
-        return rank + en - st;
-    }else{
-        return rank;
-    }
 };//}}}
 
 int WaveletTree::rangefreq(int st, int en, int x, int y) const{//{{{
