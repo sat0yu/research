@@ -313,7 +313,7 @@ private:
         void constructBitVector();
     };
 
-    size_t sigma, n;
+    size_t sigma, n, num_nodes;
     vector<int> dict;
     vector<int> pos_st, pos_en;
     vector<Node> nodes;
@@ -327,6 +327,7 @@ public:
     ~WaveletTree(){};
     WaveletTree(vector<int>&);
     int access(int) const;
+    int rank(int, int) const;
     void rangemink(int, int, int, vector<int>&);
     void rangemink_hash(int, int, int, map<int,int>&);
     void createNatRepKgramVector(int, natRepKgramVector&);
@@ -365,39 +366,38 @@ void WaveletTree::showTree() const{//{{{
         cout << endl;
     }
     cout << "illustrated." << endl;
-};
-pair<int, char> WaveletTree::traverse_on_alphabet(int n_idx, int v) const{
-    if(n_idx >= nodes.size()){
+};//}}}
+
+pair<int, char> WaveletTree::traverse_on_alphabet(int n_idx, int v) const{//{{{
+    if( n_idx >= num_nodes ){
         return pair<int, char>(-1, '0');
-    }
-    int ch_idx;
-    char direc;
-    if( v <= nodes[n_idx].th ){
-        ch_idx = (n_idx << 1);
-        direc = '0';
+    }else if( v <= nodes[n_idx].th ){
+        return pair<int, char>((n_idx << 1), '0');
     }else{
-        ch_idx = (n_idx << 1) + 1;
-        direc = '1';
+        return pair<int, char>((n_idx << 1) + 1, '1');
     }
-    return pair<int, char>(ch_idx, direc);
-};
-int WaveletTree::traverse_on_wavelet(int n_idx, char b) const{
+};//}}}
+
+int WaveletTree::traverse_on_wavelet(int n_idx, char b) const{//{{{
     if( b - '0' > 0 ){
         return (n_idx << 1) + 1;
     }else{
         return n_idx << 1;
     }
-};
-bool WaveletTree::isLeaf(int n_idx) const{
+};//}}}
+
+bool WaveletTree::isLeaf(int n_idx) const{//{{{
     /* internal nodes are stored in first half of nodes[] 
      * while leaves are stored in second half.
      * note: nodes.size() = 2*sigma */
     return (n_idx < sigma) ? false : true;
-};
-bool WaveletTree::isEmptyNode(int n_idx) const{
+};//}}}
+
+bool WaveletTree::isEmptyNode(int n_idx) const{//{{{
     return (nodes[n_idx].BC.tail_idx > 0) ? false : true;
-};
-int WaveletTree::idx2character(int n_idx) const{
+};//}}}
+
+int WaveletTree::idx2character(int n_idx) const{//{{{
     /* leaves are stored in latter half of nodes[],
      * and also stored in dict[0:sigma-1] */
     if( n_idx < sigma ){
@@ -420,7 +420,7 @@ WaveletTree::WaveletTree(vector<int>& _S){//{{{
     }
 
     //----- sort characters by bucket-sort -----
-    vector<char> bucket(UB_ALPHABET_SIZE, 0);
+    vector<bool> bucket(UB_ALPHABET_SIZE, false);
     vector<int>::iterator it_S = _S.begin(), end_it_S = _S.end();
     for(sigma=0; it_S != end_it_S; ++it_S){
         if( *it_S > UB_ALPHABET_SIZE ){
@@ -429,21 +429,22 @@ WaveletTree::WaveletTree(vector<int>& _S){//{{{
                     UB_ALPHABET_SIZE);
             exit(1);
         }
-        sigma += ( bucket[*it_S] > 0 ) ? 0 : 1;
-        bucket[*it_S] = 1;
+        sigma += bucket[*it_S] ? 0 : 1;
+        bucket[*it_S] = true;
     }
     for(int pow=1,tmp=sigma; pow<tmp; pow<<=1){sigma=(pow<<1);} /* make sigma a power of 2 */
     dict.resize(sigma, 0);
-    vector<char>::iterator it_b = bucket.begin(), end_it_b = bucket.end();
+    vector<bool>::iterator it_b = bucket.begin(), end_it_b = bucket.end();
     for(int d_idx=0; it_b != end_it_b; ++it_b){
-        if( *it_b > 0 ){
+        if( *it_b ){
             dict[d_idx++] = (int)distance(bucket.begin(), it_b);
         }
     }
     //printf("given characters are sorted.\n");
 
     //----- construct alphabet tree -----
-    nodes.resize(2*sigma, n); /* using 1-origin indices */
+    num_nodes = (sigma << 1); /* using 1-origin indices */
+    nodes.resize(num_nodes, n);
     for(int i=0; i<sigma; i++){
         /* later half of nodes[] corresspond to leaves*/
         nodes[i+sigma].max = dict[i];
@@ -451,7 +452,7 @@ WaveletTree::WaveletTree(vector<int>& _S){//{{{
     }
     for(int i=sigma-1; i>0; i--){
         /* create non-leaf nodes in a way like merge sort */
-        int l_child = nodes[2*i].max, r_child = nodes[2*i+1].max;
+        int l_child = nodes[(i << 1)].max, r_child = nodes[(i << 1)+1].max;
         /* if the max of child is 0(empty), then use left child */
         nodes[i].max = (r_child == 0) ? l_child : r_child;
         nodes[i].th = l_child;
@@ -479,8 +480,8 @@ WaveletTree::WaveletTree(vector<int>& _S){//{{{
     //printf("BitContainers are converted to BitVectors.\n");
 
     //----- reserve two arrays for tree search -----
-    pos_st.resize(nodes.size());
-    pos_en.resize(nodes.size());
+    pos_st.resize(num_nodes);
+    pos_en.resize(num_nodes);
 
     //----- show tree -----
     //showTree();
@@ -505,6 +506,10 @@ int WaveletTree::access(int i) const{//{{{
         }
     }
     return dict[c];
+};//}}}
+
+int WaveletTree::rank(int c, int i) const{//{{{
+    return 0;
 };//}}}
 
 void WaveletTree::rangemink(int st, int en, int k, vector<int>& res){//{{{
@@ -590,7 +595,7 @@ void WaveletTree::createNatRepKgramVector(int k, natRepKgramVector& res){//{{{
     }
 };//}}}
 
-int WaveletTree::rankLessThan(int c, int st, int en) const{
+int WaveletTree::rankLessThan(int c, int st, int en) const{//{{{
     int rank=0, n_idx=1, ost, oen;
     while( !isLeaf(n_idx) ){
         ost = nodes[n_idx].BV->rank1(st),
@@ -607,17 +612,20 @@ int WaveletTree::rankLessThan(int c, int st, int en) const{
         }
         if(st == en){ return rank; }
     }
-    if( idx2character(n_idx) < c ){
-        return rank + en - st;
-    }else{
-        return rank;
-    }
-};
+    /* in the case you use 'c' that does not exist in the dict, 
+     * remove comemnt out bolow */
+    // if( idx2character(n_idx) < c ){
+    //     return rank + en - st;
+    // }else{
+    //     return rank;
+    // }
+    return rank;
+};//}}}
 
-int WaveletTree::rangefreq(int st, int en, int x, int y) const{
+int WaveletTree::rangefreq(int st, int en, int x, int y) const{//{{{
     if( !( (x < y) && (st < en) ) ){ return 0; }
     return rankLessThan(y, st, en) - rankLessThan(x, st, en);
-};
+};//}}}
 
 void WaveletTree::createRangeCountingKgramVector(int k, rangeCountingKgramVector& res){
     vector<rc_code> kgram(k);
@@ -625,7 +633,7 @@ void WaveletTree::createRangeCountingKgramVector(int k, rangeCountingKgramVector
         for( int j=0, c=access(i+j); j<k; c=access(i+(++j)) ){
             kgram[j] = rc_code(
                         rangefreq(i, i+j, 0, c),
-                        rangefreq(i, i+j, c, c+1)
+                        rank(c, i+j) - rank(c, i)
                     );
         }
 
