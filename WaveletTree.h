@@ -313,8 +313,9 @@ private:
         void constructBitVector();
     };
 
-    size_t sigma, n, num_nodes;
+    size_t sigma, n, num_nodes, log2sigma;
     vector<int> dict;
+    map<int, int> inverse_dict;
     vector<int> pos_st, pos_en;
     vector<Node> nodes;
     void showTree() const;
@@ -332,6 +333,7 @@ public:
     void rangemink_hash(int, int, int, map<int,int>&);
     void createNatRepKgramVector(int, natRepKgramVector&);
     int rankLessThan(int, int, int) const;
+    int rankLessThan_forany(int, int, int) const;
     int rangefreq(int, int, int, int) const;
     void createRangeCountingKgramVector(int, rangeCountingKgramVector&);
 };
@@ -353,14 +355,13 @@ void WaveletTree::showTree() const{//{{{
     cout << endl << "dict[i]: ";
     for(int i=0; i<dict.size(); i++){ cout << dict[i] << ", "; }
     cout << endl;
-    size_bits log2sigma = (size_bits)ceil(log2(sigma));
     for(int d=0; d<log2sigma; d++){
         cout << d << "-generation" << endl;
-        for(int i=(1 << d); i<(1 << (d+1)) && !isEmptyNode(i); i++){
-            for(int j=d; j<log2sigma; j++){ cout << "\t"; }
-            printf("node(%d):", i);
-            for(int k=0; k<nodes[i].BV->n; k++){
-                cout << nodes[i].BV->access(k);
+        for(int j=(1 << d); j<(1 << (d+1)) && !isEmptyNode(j); j++){
+            for(int k=d; k<log2sigma; k++){ cout << "\t"; }
+            printf("node(%d):", j);
+            for(int k=0; k<nodes[j].BV->n; k++){
+                cout << nodes[j].BV->access(k);
             }
         }
         cout << endl;
@@ -432,15 +433,22 @@ WaveletTree::WaveletTree(vector<int>& _S){//{{{
         sigma += bucket[*it_S] ? 0 : 1;
         bucket[*it_S] = true;
     }
-    for(int pow=1,tmp=sigma; pow<tmp; pow<<=1){sigma=(pow<<1);} /* make sigma a power of 2 */
+    //printf("given characters are sorted.\n");
+
+    //----- create dictionaries that convert character <-> index -----
+    for(log2sigma = 1; (1 << log2sigma) < sigma; ++log2sigma){}
+    sigma = ( 1 << (log2sigma) ); /* make sigma a power of 2 */
     dict.resize(sigma, 0);
     vector<bool>::iterator it_b = bucket.begin(), end_it_b = bucket.end();
     for(int d_idx=0; it_b != end_it_b; ++it_b){
         if( *it_b ){
-            dict[d_idx++] = (int)distance(bucket.begin(), it_b);
+            int character = (int)distance(bucket.begin(), it_b);
+            inverse_dict[character] = d_idx;
+            dict[d_idx] = character;
+            d_idx++;
         }
     }
-    //printf("given characters are sorted.\n");
+    //printf("dectionaries are created.\n");
 
     //----- construct alphabet tree -----
     num_nodes = (sigma << 1); /* using 1-origin indices */
@@ -461,11 +469,15 @@ WaveletTree::WaveletTree(vector<int>& _S){//{{{
 
     //----- construct wavelet tree -----
     for(int i=0, end_i=_S.size(); i<end_i; ++i){ /* regist characters, one by one */
-        for(int n_idx=1;;){ /* the index of root node is 1 */
-            pair<int, char> ret = traverse_on_alphabet(n_idx, _S[i]);
-            if(ret.first < 0){ break; }
-            nodes[n_idx].BC.append(ret.second);
-            n_idx = ret.first;
+        int path = inverse_dict[ _S[i] ];
+        for(int n_idx=1, d=log2sigma-1; d >= 0; d--){
+            if( path & ( 1 << d ) ){
+                nodes[n_idx].BC.append('1');
+                n_idx = (n_idx << 1) + 1;
+            }else{
+                nodes[n_idx].BC.append('0');
+                n_idx = (n_idx << 1);
+            }
         }
     }
     //printf("a wavelet tree is constructed.\n");
@@ -484,7 +496,7 @@ WaveletTree::WaveletTree(vector<int>& _S){//{{{
     pos_en.resize(num_nodes);
 
     //----- show tree -----
-    //showTree();
+    // showTree();
 };//}}}
 
 int WaveletTree::access(int i) const{//{{{
@@ -509,15 +521,15 @@ int WaveletTree::access(int i) const{//{{{
 };//}}}
 
 int WaveletTree::rank(int c, int i) const{//{{{
-    int rank=i, n_idx=1;
-    while( !isLeaf(n_idx) ){
-        pair<int, char> child = traverse_on_alphabet(n_idx, c);
-        if(child.second - '0'){
+    int rank = i, path = inverse_dict.at(c);
+    for(int d=log2sigma-1, n_idx=1; d >= 0; d--){
+        if( path & ( 1 << d ) ){
             rank = nodes[n_idx].BV->rank1(rank);
+            n_idx = (n_idx << 1) + 1;
         }else{
             rank = nodes[n_idx].BV->rank0(rank);
+            n_idx = (n_idx << 1);
         }
-        n_idx = child.first;
     }
     return rank;
 };//}}}
@@ -606,6 +618,25 @@ void WaveletTree::createNatRepKgramVector(int k, natRepKgramVector& res){//{{{
 };//}}}
 
 int WaveletTree::rankLessThan(int c, int st, int en) const{//{{{
+    int rank=0, path=inverse_dict.at(c), ost, oen;
+    for(int d=log2sigma-1, n_idx=1; st != en && d >= 0; d--){
+        ost = nodes[n_idx].BV->rank1(st),
+        oen = nodes[n_idx].BV->rank1(en);
+        if( path & ( 1 << d ) ){
+            rank += en - st - oen + ost;
+            st = ost;
+            en = oen;
+            n_idx = (n_idx << 1) + 1;
+        }else{
+            st = st - ost;
+            en = en - oen;
+            n_idx = (n_idx << 1);
+        }
+    }
+    return rank;
+};//}}}
+
+int WaveletTree::rankLessThan_forany(int c, int st, int en) const{//{{{
     int rank=0, n_idx=1, ost, oen;
     while( !isLeaf(n_idx) ){
         ost = nodes[n_idx].BV->rank1(st),
@@ -622,14 +653,11 @@ int WaveletTree::rankLessThan(int c, int st, int en) const{//{{{
         }
         if(st == en){ return rank; }
     }
-    /* in the case you use 'c' that does not exist in the dict, 
-     * remove comemnt out bolow */
-    // if( idx2character(n_idx) < c ){
-    //     return rank + en - st;
-    // }else{
-    //     return rank;
-    // }
-    return rank;
+    if( idx2character(n_idx) < c ){
+        return rank + en - st;
+    }else{
+        return rank;
+    }
 };//}}}
 
 int WaveletTree::rangefreq(int st, int en, int x, int y) const{//{{{
@@ -642,7 +670,7 @@ void WaveletTree::createRangeCountingKgramVector(int k, rangeCountingKgramVector
     for(int i=0, end_i=n-k+1; i<end_i; i++){
         for( int j=0, c=access(i+j); j<k; c=access(i+(++j)) ){
             kgram[j] = rc_code(
-                        rangefreq(i, i+j, 0, c),
+                        rankLessThan(c, i, i+j),
                         rank(c, i+j) - rank(c, i)
                     );
         }

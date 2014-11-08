@@ -267,6 +267,28 @@ int comparison_kgram_vector_construct(int length, int range, int k){//{{{
 
             if( naive_rc_vec != wt_rc_vec ){
                 printf("error: something worse happen.\n");
+
+                rangeCountingKgramVector::iterator n_it=naive_rc_vec.begin(), end_n_id=naive_rc_vec.end();
+                cout << "naive coding" << endl;
+                for(; n_it != end_n_id; n_it++){
+                    vector<rc_code> kgram = n_it->first;
+                    vector<rc_code>::iterator it=kgram.begin(), end_it=kgram.end();
+                    for(; it!=end_it; it++){
+                        printf("(%d, %d) ", it->first, it->second);
+                    }
+                    cout << endl;
+                }
+
+                rangeCountingKgramVector::iterator w_it=wt_rc_vec.begin(), end_w_id=wt_rc_vec.end();
+                cout << "wavelet coding" << endl;
+                for(; w_it != end_w_id; w_it++){
+                    vector<rc_code> kgram = w_it->first;
+                    vector<rc_code>::iterator it=kgram.begin(), end_it=kgram.end();
+                    for(; it!=end_it; it++){
+                        printf("(%d, %d) ", it->first, it->second);
+                    }
+                    cout << endl;
+                }
                 exit(1);
             }
             // </a test for kgram using range counting rep.>
