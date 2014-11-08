@@ -509,7 +509,17 @@ int WaveletTree::access(int i) const{//{{{
 };//}}}
 
 int WaveletTree::rank(int c, int i) const{//{{{
-    return 0;
+    int rank=i, n_idx=1;
+    while( !isLeaf(n_idx) ){
+        pair<int, char> child = traverse_on_alphabet(n_idx, c);
+        if(child.second - '0'){
+            rank = nodes[n_idx].BV->rank1(rank);
+        }else{
+            rank = nodes[n_idx].BV->rank0(rank);
+        }
+        n_idx = child.first;
+    }
+    return rank;
 };//}}}
 
 void WaveletTree::rangemink(int st, int en, int k, vector<int>& res){//{{{
@@ -627,7 +637,7 @@ int WaveletTree::rangefreq(int st, int en, int x, int y) const{//{{{
     return rankLessThan(y, st, en) - rankLessThan(x, st, en);
 };//}}}
 
-void WaveletTree::createRangeCountingKgramVector(int k, rangeCountingKgramVector& res){
+void WaveletTree::createRangeCountingKgramVector(int k, rangeCountingKgramVector& res){//{{{
     vector<rc_code> kgram(k);
     for(int i=0, end_i=n-k+1; i<end_i; i++){
         for( int j=0, c=access(i+j); j<k; c=access(i+(++j)) ){
@@ -643,6 +653,6 @@ void WaveletTree::createRangeCountingKgramVector(int k, rangeCountingKgramVector
             res[kgram]++;
         }
     }
-};
+};//}}}
 
 /* vim:set foldmethod=marker commentstring=//%s : */
