@@ -333,6 +333,7 @@ public:
     void createNatRepKgramVector(int, natRepKgramVector&);
     int rankLessThan(int, int, int) const;
     int rankLessThan_forany(int, int, int) const;
+    void rankLessThanEqual(int, int, int, int*, int*) const;
     int rangefreq(int, int, int, int) const;
     void createRangeCountingKgramVector(int, rangeCountingKgramVector&);
 };
@@ -600,14 +601,36 @@ int WaveletTree::rankLessThan(int c, int st, int en) const{//{{{
             rank += en - st - oen + ost;
             st = ost;
             en = oen;
-            n_idx = (n_idx << 1) + 1;
+            n_idx <<= 1;
+            n_idx++;
         }else{
             st = st - ost;
             en = en - oen;
-            n_idx = (n_idx << 1);
+            n_idx <<= 1;
         }
     }
     return rank;
+};//}}}
+
+void WaveletTree::rankLessThanEqual(int c, int st, int en, int* lt, int* eq) const{//{{{
+    int rank=0, path=inverse_dict.at(c), ost, oen;
+    for(int d=log2sigma-1, n_idx=1; st != en && d >= 0; d--){
+        ost = nodes[n_idx].BV->rank1(st),
+        oen = nodes[n_idx].BV->rank1(en);
+        if( path & ( 1 << d ) ){
+            rank += en - st - oen + ost;
+            st = ost;
+            en = oen;
+            n_idx <<= 1;
+            n_idx++;
+        }else{
+            st = st - ost;
+            en = en - oen;
+            n_idx <<= 1;
+        }
+    }
+    *lt = rank;
+    *eq = en - st;
 };//}}}
 
 int WaveletTree::rangefreq(int st, int en, int x, int y) const{//{{{
@@ -618,11 +641,9 @@ int WaveletTree::rangefreq(int st, int en, int x, int y) const{//{{{
 void WaveletTree::createRangeCountingKgramVector(int k, rangeCountingKgramVector& res){//{{{
     vector<rc_code> kgram(k);
     for(int i=0, end_i=n-k+1; i<end_i; i++){
-        for( int j=0, c=access(i+j); j<k; c=access(i+(++j)) ){
-            kgram[j] = rc_code(
-                        rankLessThan(c, i, i+j),
-                        rank(c, i+j) - rank(c, i)
-                    );
+        for( int j=0, lt, eq, c=access(i+j); j<k; c=access(i+(++j)) ){
+            rankLessThanEqual(c, i, i+j, &lt, &eq);
+            kgram[j] = rc_code(lt, eq);
         }
 
         if( res.find(kgram) == res.end() ){ /* regist the kgram */
