@@ -23,6 +23,7 @@ int test_for_wavelettree(int, int, int);
 int comparison_kgram_vector_construct(int, int, int);
 void naive_natRepKgramVector(vector<int>&, int, natRepKgramVector&);
 void naive_rangeCountingKgramVector(vector<int>&, int, rangeCountingKgramVector&);
+void naive_rangeCountingKgramVectorWithSliding(vector<int>&, int, rangeCountingKgramVector&);
 
 int main(){
     srand(time(0));
@@ -221,7 +222,8 @@ int comparison_kgram_vector_construct(int length, int range, int k){//{{{
             printf("|T|=%d, sigma=%d, k=%d\n", j, i, k);
 
             clock_t s_time, e_time;
-            double duration, naive_duration;
+            double duration, wt_iterate_duration, wt_sliding_duration,
+                   naive_iterate_duration, naive_sliding_duration;
 
             s_time = clock();
             // <construst an instance>
@@ -231,41 +233,28 @@ int comparison_kgram_vector_construct(int length, int range, int k){//{{{
             duration = (double)(e_time - s_time) / (double)CLOCKS_PER_SEC;
             printf("construction: OK \t %f [s]\n", duration);
 
-            // <a test for kgram using natural rep.>
-            duration = naive_duration = 0.;
-            natRepKgramVector naive_nat_vec, wt_nat_vec;
-
-            s_time = clock();
-            naive_natRepKgramVector(S, k, naive_nat_vec);
-            naive_duration += (clock() - s_time);
-
-            s_time = clock();
-            wt.createNatRepKgramVector(k, wt_nat_vec);
-            duration += (clock() - s_time);
-
-            if( naive_nat_vec != wt_nat_vec ){
-                printf("error: something worse happen.\n");
-                exit(1);
-            }
-            // </a test for kgram using natural rep.>
-            duration = (double)(duration) / (double)CLOCKS_PER_SEC;
-            naive_duration = (double)(naive_duration) / (double)CLOCKS_PER_SEC;
-            printf("natRepKgramVector(S,%d,vec) test: OK\t WT:%.10lf [s], naive:%.10lf\n", k, duration, naive_duration);
-
 
             // <a test for kgram using range counring rep.>
-            duration = naive_duration = 0.;
-            rangeCountingKgramVector naive_rc_vec, wt_rc_vec;
+            wt_iterate_duration = wt_sliding_duration = naive_iterate_duration = naive_sliding_duration = 0.;
+            rangeCountingKgramVector naive_rc_vec, naive_slide_rc_vec, wt_rc_vec, wt_slide_rc_vec;
 
             s_time = clock();
             naive_rangeCountingKgramVector(S, k, naive_rc_vec);
-            naive_duration += (clock() - s_time);
+            naive_iterate_duration += (clock() - s_time);
 
             s_time = clock();
-            wt.createRangeCountingKgramVector(k, wt_rc_vec);
-            duration += (clock() - s_time);
+            naive_rangeCountingKgramVectorWithSliding(S, k, naive_slide_rc_vec);
+            naive_sliding_duration += (clock() - s_time);
 
-            if( naive_rc_vec != wt_rc_vec ){
+            s_time = clock();
+            wt.createRangeCountingKgramVector(S, k, wt_rc_vec);
+            wt_iterate_duration += (clock() - s_time);
+
+            s_time = clock();
+            wt.createRangeCountingKgramVectorWithSliding(S, k, wt_slide_rc_vec);
+            wt_sliding_duration += (clock() - s_time);
+
+            if( naive_rc_vec != wt_rc_vec ){//{{{
                 printf("error: something worse happen.\n");
 
                 rangeCountingKgramVector::iterator n_it=naive_rc_vec.begin(), end_n_id=naive_rc_vec.end();
@@ -280,7 +269,7 @@ int comparison_kgram_vector_construct(int length, int range, int k){//{{{
                 }
 
                 rangeCountingKgramVector::iterator w_it=wt_rc_vec.begin(), end_w_id=wt_rc_vec.end();
-                cout << "wavelet coding" << endl;
+                cout << "wavelet iteration coding" << endl;
                 for(; w_it != end_w_id; w_it++){
                     vector<rc_code> kgram = w_it->first;
                     vector<rc_code>::iterator it=kgram.begin(), end_it=kgram.end();
@@ -291,10 +280,70 @@ int comparison_kgram_vector_construct(int length, int range, int k){//{{{
                 }
                 exit(1);
             }
+
+            if( naive_rc_vec != naive_slide_rc_vec ){
+                printf("error: something worse happen.\n");
+
+                rangeCountingKgramVector::iterator n_it=naive_rc_vec.begin(), end_n_id=naive_rc_vec.end();
+                cout << "naive coding" << endl;
+                for(; n_it != end_n_id; n_it++){
+                    vector<rc_code> kgram = n_it->first;
+                    vector<rc_code>::iterator it=kgram.begin(), end_it=kgram.end();
+                    for(; it!=end_it; it++){
+                        printf("(%d, %d) ", it->first, it->second);
+                    }
+                    cout << endl;
+                }
+
+                rangeCountingKgramVector::iterator w_it=naive_slide_rc_vec.begin(), end_w_id=naive_slide_rc_vec.end();
+                cout << "naive sliding coding" << endl;
+                for(; w_it != end_w_id; w_it++){
+                    vector<rc_code> kgram = w_it->first;
+                    vector<rc_code>::iterator it=kgram.begin(), end_it=kgram.end();
+                    for(; it!=end_it; it++){
+                        printf("(%d, %d) ", it->first, it->second);
+                    }
+                    cout << endl;
+                }
+                exit(1);
+            }
+
+            if( naive_rc_vec != wt_slide_rc_vec ){
+                printf("error: something worse happen.\n");
+
+                rangeCountingKgramVector::iterator n_it=naive_rc_vec.begin(), end_n_id=naive_rc_vec.end();
+                cout << "naive coding" << endl;
+                for(; n_it != end_n_id; n_it++){
+                    vector<rc_code> kgram = n_it->first;
+                    vector<rc_code>::iterator it=kgram.begin(), end_it=kgram.end();
+                    for(; it!=end_it; it++){
+                        printf("(%d, %d) ", it->first, it->second);
+                    }
+                    cout << endl;
+                }
+
+                rangeCountingKgramVector::iterator w_it=wt_slide_rc_vec.begin(), end_w_id=wt_slide_rc_vec.end();
+                cout << "wavelet sliding coding" << endl;
+                for(; w_it != end_w_id; w_it++){
+                    vector<rc_code> kgram = w_it->first;
+                    vector<rc_code>::iterator it=kgram.begin(), end_it=kgram.end();
+                    for(; it!=end_it; it++){
+                        printf("(%d, %d) ", it->first, it->second);
+                    }
+                    cout << endl;
+                }
+                exit(1);
+            }//}}}
+
             // </a test for kgram using range counting rep.>
-            duration = (double)(duration) / (double)CLOCKS_PER_SEC;
-            naive_duration = (double)(naive_duration) / (double)CLOCKS_PER_SEC;
-            printf("rangeCountingKgramVector(S,%d,vec) test: OK\t WT:%.10lf [s], naive:%.10lf\n", k, duration, naive_duration);
+            wt_iterate_duration = (double)(wt_iterate_duration) / (double)CLOCKS_PER_SEC;
+            wt_sliding_duration = (double)(wt_sliding_duration) / (double)CLOCKS_PER_SEC;
+            naive_iterate_duration = (double)(naive_iterate_duration) / (double)CLOCKS_PER_SEC;
+            naive_sliding_duration = (double)(naive_sliding_duration) / (double)CLOCKS_PER_SEC;
+            printf("rangeCountingKgramVector(S,%d,vec) test: OK\n \
+                    WT(iterate):%.10lf [s], WT(slide):%.10lf [s], naive(iterate):%.10lf, naive(slide):%.10lf\n"\
+                    , k, wt_iterate_duration, wt_sliding_duration, naive_iterate_duration, naive_sliding_duration);
+            cout << flush;
         }
     }
 
@@ -342,6 +391,49 @@ void naive_rangeCountingKgramVector(vector<int>& S, int k, rangeCountingKgramVec
             }
             kgram[j] = rc_code(lt, eq);
         }
+
+        if( res.find(kgram) == res.end() ){ /* regist the kgram */
+            res[kgram] = 1;
+        }else{
+            res[kgram]++;
+        }
+    }
+}//}}}
+
+void naive_rangeCountingKgramVectorWithSliding(vector<int>& S, int k, rangeCountingKgramVector& res){//{{{
+    vector<rc_code> kgram(k);
+    for( int j=0; j<k; ++j ){ // the first kgram is calcucated naively
+        int lt=0, eq=0;
+        for(int l=j-1; l>=0; l--){ /* range counting */
+            if(S[l] < S[j]){
+                lt++;
+            }else if(S[l] == S[j]){
+                eq++;
+            }
+        }
+        kgram[j] = rc_code(lt, eq);
+    }
+    res[kgram] = 1;
+
+    for(int i=1, end_i=S.size()-k+1; i<end_i; i++){
+        for(int j=0; j<k-1; j++){
+            if(S[i-1] < S[i+j]){ // utilize the past-head value
+                kgram[j+1].first--;
+            }else if(S[i-1] == S[i+j]){
+                kgram[j+1].second--;
+            }
+            kgram[j] = kgram[j+1];
+        }
+
+        int lt=0, eq=0; // the new-tail value is calcucated naively
+        for(int l=k-2; l>=0; l--){ /* range counting */
+            if(S[i+l] < S[i+k-1]){
+                lt++;
+            }else if(S[i+l] == S[i+k-1]){
+                eq++;
+            }
+        }
+        kgram[k-1] = rc_code(lt, eq);
 
         if( res.find(kgram) == res.end() ){ /* regist the kgram */
             res[kgram] = 1;
