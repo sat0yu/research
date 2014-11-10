@@ -238,7 +238,7 @@ int comparison_kgram_vector_construct(int length, int range, int k_max){//{{{
                 naive_duration += (clock() - s_time);
 
                 s_time = clock();
-                wt.createNatRepKgramVector(k, wt_nat_vec);
+                wt.createNatRepKgramVector(S, k, wt_nat_vec);
                 wt_duration += (clock() - s_time);
 
                 if( naive_nat_vec != wt_nat_vec ){

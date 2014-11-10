@@ -330,7 +330,7 @@ public:
     int rank(int, int) const;
     void rangemink(int, int, int, vector<int>&);
     void rangemink_hash(int, int, int, map<int,int>&);
-    void createNatRepKgramVector(int, natRepKgramVector&);
+    void createNatRepKgramVector(vector<int>&, int, natRepKgramVector&);
     int rankLessThan(int, int, int) const;
     int rankLessThan_forany(int, int, int) const;
     void rankLessThanEqual(int, int, int, int*, int*) const;
@@ -574,7 +574,7 @@ void WaveletTree::rangemink_hash(int st, int en, int k, map<int, int>& hash){//{
     }
 };//}}}
 
-void WaveletTree::createNatRepKgramVector(int k, natRepKgramVector& res){//{{{
+void WaveletTree::createNatRepKgramVector(vector<int>& S, int k, natRepKgramVector& res){//{{{
     vector<int> kgram(k);
     map<int, int> hash;
     for(int i=0, end_i=n-k+1; i<end_i; i++){
@@ -582,7 +582,7 @@ void WaveletTree::createNatRepKgramVector(int k, natRepKgramVector& res){//{{{
         rangemink_hash(i, i+k, k, hash); /* hashing val -> order */
 
         for(int j=0; j<k; j++){
-            kgram[j] = hash[ access(i+j) ]; /* create an encoded kgram */
+            kgram[j] = hash[ S[i+j] ]; /* create an encoded kgram */
         }
 
         if( res.find(kgram) == res.end() ){ /* regist the kgram */
