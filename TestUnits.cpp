@@ -252,6 +252,7 @@ int comparison_kgram_vector_construct(int length, int range, int k_max){//{{{
             naive_duration = (double)(naive_duration) / (double)CLOCKS_PER_SEC;
             printf("|T|=%d, sigma=%d, k=%d, natRepKgramVector(S,%d,vec) test: OK\t Const.:%.10lf [s], WT:%.10lf [s], naive:%.10lf\n", 
                     j, i, k, k, construct_duration / loop, wt_duration / loop, naive_duration / loop);
+            cout << flush;
         }
     }
 

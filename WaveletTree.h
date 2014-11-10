@@ -553,20 +553,21 @@ void WaveletTree::rangemink_hash(int st, int en, int k, map<int, int>& hash){//{
             i = hash[idx2character(n_idx)] = (i + pos_en[n_idx] - pos_st[n_idx]);
         }else{
             int ost = nodes[n_idx].BV->rank1(pos_st[n_idx]),
-                oen = nodes[n_idx].BV->rank1(pos_en[n_idx]),
-                zst = pos_st[n_idx] - ost,
-                zen = pos_en[n_idx] - oen;
+                oen = nodes[n_idx].BV->rank1(pos_en[n_idx]);
+                // zst = pos_st[n_idx] - ost,
+                // zen = pos_en[n_idx] - oen;
             if( oen - ost ){
                 int r_child = (n_idx<<1)+1;
                 que.push(r_child);
                 pos_st[r_child] = ost;
                 pos_en[r_child] = oen;
             }
-            if( zen - zst ){
+            // if( zen - zst ){
+            if( pos_en[n_idx] - oen - pos_st[n_idx] + ost ){
                 int l_child = (n_idx<<1);
                 que.push(l_child);
-                pos_st[l_child] = zst;
-                pos_en[l_child] = zen;
+                pos_st[l_child] = pos_st[n_idx] - ost;
+                pos_en[l_child] = pos_en[n_idx] - oen;
             }
         }
         que.pop();
