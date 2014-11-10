@@ -15,11 +15,13 @@
 #include<ctime>
 
 #include "./WaveletTree.h"
+#include "./RangeCounting.h"
 
 using namespace std;
 
 int test_for_bitvector(int);
 int test_for_wavelettree(int, int, int);
+int test_for_rangecounting(int);
 int comparison_kgram_vector_construct(int, int, int);
 void naive_natRepKgramVector(vector<int>&, int, natRepKgramVector&);
 void naive_rangeCountingKgramVector(vector<int>&, int, rangeCountingKgramVector&);
@@ -30,9 +32,8 @@ int main(){
     test_for_bitvector(bv_textsize);
     int wt_textsize = 1000, wt_alphabetsize = 1000, k=10;
     test_for_wavelettree(wt_textsize, wt_alphabetsize, k);
-
-    wt_textsize = 1000, wt_alphabetsize = 1000, k=10;
-    comparison_kgram_vector_construct(wt_textsize, wt_alphabetsize, k);
+    int rc_textsize = 1000;
+    test_for_rangecounting(rc_textsize);
 }
 
 int test_for_bitvector(int N){//{{{
@@ -209,6 +210,53 @@ int test_for_wavelettree(int length, int range, int k){//{{{
     return 0;
 };//}}}
 
+int test_for_rangecounting(int length){//{{{
+    for(int _i=2; _i<length; _i<<=1){
+        int i = _i + (rand() % _i);
+
+        vector<int> S(i);
+        for(int j=0; j<i; j++){ S[j] = rand() % i; }
+        printf("\na test in the condition |T|=%d starts;\n", i);
+
+        clock_t s_time;
+        double duration;
+        bool result;
+
+        s_time = clock();
+        // <construst an instance>
+        RangeCounting rc(S);
+        // </construst an instance>
+        duration = clock() - s_time;
+        duration = (double)(duration) / (double)CLOCKS_PER_SEC;
+        printf("construction: OK \t %f [s]\n", duration);
+
+        // <a test for rangemaxk>
+        result = true;
+        duration = 0.;
+        for(int j=0; j<i; ++j){
+            for(int k=0; k<j; ++k){
+                int naive=0;
+                for(int l=0; l<k; l++){
+                    if( S[l] < S[k] ){ naive++; }
+                }
+
+                s_time = clock();
+                int rc_query = rc.query(k, S[k]);
+                duration += (clock() - s_time);
+                if( naive != rc_query ){
+                    printf("naive: %d, RangeCounting:%d\n", naive, rc_query);
+                    result = false;
+                }
+            }
+        }
+        if(!result){ exit(1); }
+        // </a test for rangemaxk>
+        duration = (double)(duration) / (double)CLOCKS_PER_SEC;
+        printf("RC.query test: OK\t %.10lf [s]\n", duration);
+    }
+    return 0;
+};//}}}
+
 int comparison_kgram_vector_construct(int length, int range, int k){//{{{
     for(int _i=2; _i<range; _i<<=1){
         int i = _i + (rand() % _i);
@@ -350,4 +398,5 @@ void naive_rangeCountingKgramVector(vector<int>& S, int k, rangeCountingKgramVec
         }
     }
 }//}}}
+
 /* vim:set foldmethod=marker commentstring=//%s : */
