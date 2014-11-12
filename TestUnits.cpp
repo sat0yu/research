@@ -24,9 +24,12 @@ int test_for_bitvector(int);
 int test_for_wavelettree(int, int, int);
 int test_for_rangecounting(int);
 int comparison_kgram_vector_construct(int, int, int);
+int test_for_ReverseRangeCounting(int);
 void naive_natRepKgramVector(vector<int>&, int, natRepKgramVector&);
 void naive_rangeCountingKgramVector(vector<int>&, int, rangeCountingKgramVector&);
 void naive_rangeCountingKgramVectorWithSliding(vector<int>&, int, rangeCountingKgramVector&);
+void kgramVector_RRCCoding(vector<int>&, int, reverseRangeCountingKgramVector&);
+void kgramVector_RRCCodingAndWindowSliding(vector<int>&, int, reverseRangeCountingKgramVector&);
 
 int main(){
     srand(time(0));
@@ -39,6 +42,9 @@ int main(){
     test_for_rangecounting(rc_textsize);
     int textsize = 10000, range = 1000, max_k = 100;
     comparison_kgram_vector_construct(textsize, range, max_k);
+
+    int rrc_textsize = 2000;
+    test_for_ReverseRangeCounting(rrc_textsize);
 
     printf("\nAll Tests are passed. Acceptance\n");
 }
@@ -507,6 +513,69 @@ int comparison_kgram_vector_construct(int length, int range, int k){//{{{
     return 0;
 };//}}}
 
+int test_for_ReverseRangeCounting(int length){//{{{
+    for(int i=1; i<length; i<<=1){
+        for(int k=1; k<i; k<<=1){
+            vector<int> S(i);
+            for(int j=0; j<i; j++){ S[j] = rand(); }
+            printf("|T|=%d, k=%d\n", i, k);
+
+            clock_t s_time;
+            double iterate_duration = 0.,
+                   slide_duration = 0.;
+
+            reverseRangeCountingKgramVector iterate_rrc_vec, slide_rrc_vec;
+
+            s_time = clock();
+            kgramVector_RRCCoding(S, k, iterate_rrc_vec);
+            iterate_duration += (clock() - s_time);
+
+            s_time = clock();
+            kgramVector_RRCCodingAndWindowSliding(S, k, slide_rrc_vec);
+            slide_duration += (clock() - s_time);
+
+            if( iterate_rrc_vec != slide_rrc_vec ){//{{{
+                printf("error: something worse happen.\n");
+
+                reverseRangeCountingKgramVector::iterator
+                    n_it=iterate_rrc_vec.begin(),
+                    end_n_id=iterate_rrc_vec.end();
+                cout << "iteration coding" << endl;
+                for(; n_it != end_n_id; n_it++){
+                    vector<rc_code> kgram = n_it->first;
+                    vector<rc_code>::iterator it=kgram.begin(), end_it=kgram.end();
+                    for(; it!=end_it; it++){
+                        printf("(%d, %d) ", it->first, it->second);
+                    }
+                    cout << endl;
+                }
+
+                reverseRangeCountingKgramVector::iterator
+                    w_it=slide_rrc_vec.begin(),
+                    end_w_id=slide_rrc_vec.end();
+                cout << "sliding coding" << endl;
+                for(; w_it != end_w_id; w_it++){
+                    vector<rc_code> kgram = w_it->first;
+                    vector<rc_code>::iterator it=kgram.begin(), end_it=kgram.end();
+                    for(; it!=end_it; it++){
+                        printf("(%d, %d) ", it->first, it->second);
+                    }
+                    cout << endl;
+                }
+                exit(1);
+            }//}}}
+
+            // </a test for kgram using range counting rep.>
+            iterate_duration /= (double)CLOCKS_PER_SEC;
+            slide_duration /= (double)CLOCKS_PER_SEC;
+            printf("reverseRangeCountingKgramVector(S,%d,vec) test: OK\n "
+                    "iterate:%.10lf, slide:%.10lf\n", k, iterate_duration, slide_duration);
+            cout << flush;
+        }
+    }
+    return 0;
+};//}}}
+
 void naive_natRepKgramVector(vector<int>& S, int k, natRepKgramVector& res){//{{{
     vector<int> substring(k), kgram(k);
     map<int, int> hash;
@@ -591,6 +660,64 @@ void naive_rangeCountingKgramVectorWithSliding(vector<int>& S, int k, rangeCount
             }
         }
         kgram[k-1] = rc_code(lt, eq);
+
+        if( res.find(kgram) == res.end() ){ /* regist the kgram */
+            res[kgram] = 1;
+        }else{
+            res[kgram]++;
+        }
+    }
+}//}}}
+
+void kgramVector_RRCCoding(vector<int>& S, int k, reverseRangeCountingKgramVector& res){//{{{
+    vector<rc_code> kgram(k);
+    for(int i=0, end_i=S.size()-k+1; i<end_i; i++){
+        for(int j=0; j<k; j++){ /* for each a substring of length k */
+            int lt=0, eq=0;
+            for(int l=j+1; l<k; l++){ /* reverse range counting */
+                if(S[i+j] > S[i+l]){
+                    lt++;
+                }else if(S[i+j] == S[i+l]){
+                    eq++;
+                }
+            }
+            kgram[j] = rc_code(lt, eq);
+        }
+
+        if( res.find(kgram) == res.end() ){ /* regist the kgram */
+            res[kgram] = 1;
+        }else{
+            res[kgram]++;
+        }
+    }
+}//}}}
+
+void kgramVector_RRCCodingAndWindowSliding(vector<int>& S, int k, reverseRangeCountingKgramVector& res){//{{{
+    vector<rc_code> kgram(k);
+    for( int j=0; j<k; ++j ){ // the first kgram code(S[0:k-1]) is calcucated naively
+        int lt=0, eq=0;
+        for(int l=j+1; l<k; l++){ /* reverse range counting */
+            if(S[j] > S[l]){
+                lt++;
+            }else if(S[j] == S[l]){
+                eq++;
+            }
+        }
+        kgram[j] = rc_code(lt, eq);
+    }
+    kgram[k-1] = rc_code(0, 0); // the tail of a kgram using RRCCoding is always (0,0)
+    res[kgram] = 1;
+
+    for(int i=1, end_i=S.size()-k+1; i<end_i; i++){ // calc. code(S[i:i+k-1]) for each i
+        for(int j=0, tail_idx=i+k-1; j<k-1; j++){
+            kgram[j] = kgram[j+1];
+            if(S[i+j] > S[tail_idx]){ // utilize the tail value
+                kgram[j].first++;
+            }else if(S[i+j] == S[tail_idx]){
+                kgram[j].second++;
+            }
+        }
+        kgram[k-1] = rc_code(0, 0); // the tail of a kgram using RRCCoding is always (0,0)
 
         if( res.find(kgram) == res.end() ){ /* regist the kgram */
             res[kgram] = 1;

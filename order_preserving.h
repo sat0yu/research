@@ -8,4 +8,6 @@ using namespace std;
 
 typedef map< vector<int>, int> natRepKgramVector;
 typedef pair<int, int> rc_code;
+typedef pair<int, int> rrc_code;
 typedef map< vector<rc_code>, int> rangeCountingKgramVector;
+typedef map< vector<rc_code>, int> reverseRangeCountingKgramVector;
