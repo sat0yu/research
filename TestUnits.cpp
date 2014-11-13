@@ -237,7 +237,7 @@ int test_for_inversioncounting(int length){//{{{
         for(int j=0; j<i; ++j){
             if(S[j].second){
                 for(int k=0; k<j; ++k){
-                    if( !S[k].second and (S[k].first < S[j].first) ){
+                    if( !S[k].second and (S[k].first <= S[j].first) ){
                         naive_inversion_count++;
                     }
                 }
