@@ -222,12 +222,12 @@ int test_for_inversioncounting(int length){//{{{
             S[j].first = rand() % i;
             S[j].second = rand() % 2;
         }
+        printf("\na test in the condition |T|=%d starts;\n", i);
+        cout << "raw P:\t\t";
         for(int j=0; j<i; j++){
-            S[j].first = rand() % i;
-            S[j].second = rand() % 2;
             printf("%d(%d) ", S[j].first, S[j].second);
         }
-        printf("\na test in the condition |T|=%d starts;\n", i);
+        cout << endl;
 
         clock_t s_time;
         double duration = 0.;
