@@ -11,10 +11,8 @@
 #include<ctime>
 
 #define UINT32 unsigned int
-#define DEFINED_w 32
-#define DEFINED_L 6 // DEFINED_L = ceil(sqrt(32)),
-                    // each x-coodinate of point is stored in (DEFINES_L+1) bit(s)
-#define DEFINED_B 4 // DEFINED_B = 32 / (DEFINED_L + 1)
+#define UINT16 unsigned short
+#define DEFINED_w 16
 #define NUM_POINTS_IN_WORD(l) ((DEFINED_w)/(l+1)) // 'l' meand # of bits represeinting each p.y
                                                   // and the rest one bit is its color
 #define NUM_WORDS(n,l) (((n)/NUM_POINTS_IN_WORD(l))+1)
@@ -22,15 +20,15 @@
 
 using namespace std;
 
-int rec_count_inversions(int, int, vector<UINT32>&);
-int count_inversions_tilde(int, vector<UINT32>&);
+int rec_count_inversions(int, int, vector<UINT16>&);
+int count_inversions_tilde(int, vector<UINT16>&);
 void normalizeQueryPoints(vector< pair<int,bool> >&, vector< pair<int,bool> >&);
-void dividingQueryPoints(int, vector<UINT32>&, int, vector<UINT32>&, int*, vector<UINT32>&, int*);
-void packingQueryPoints(int, vector< pair<int, bool> >&, vector<UINT32>&);
+void dividingQueryPoints(int, vector<UINT16>&, int, vector<UINT16>&, int*, vector<UINT16>&, int*);
+void packingQueryPoints(int, vector< pair<int, bool> >&, vector<UINT16>&);
 int count_inversions(vector< pair<int, bool> >&);
-void showWord(int, vector<UINT32>&);
+void showWord(int, vector<UINT16>&);
 
-void showWords(int l, vector<UINT32>& z){//{{{
+void showWords(int l, vector<UINT16>& z){//{{{
     for(int i=0; i<z.size(); i++){
         printf("z[%d]: ", i);
         for(int j=DEFINED_w-1; j>=0; j--){
@@ -41,24 +39,25 @@ void showWords(int l, vector<UINT32>& z){//{{{
     }
 };//}}}
 
-int rec_count_inversions(int l, vector<UINT32>& P, int p_size){//{{{
+int rec_count_inversions(int l, vector<UINT16>& P, int p_size){//{{{
+    const static int L = (int)ceil(sqrt(DEFINED_w));
     int h=1, p0_size, p1_size;
     if( !(l>0) ){
         return 0;
-    }else if( l <= DEFINED_L ){
-        vector<UINT32> P0, P1;
+    }else if( l <= L ){
+        vector<UINT16> P0, P1;
         dividingQueryPoints(l, P, p_size, P0, &p0_size, P1, &p1_size);
         printf("l:%d, p0_size:%d, p1_size:%d\n", l, p0_size, p1_size);
         return rec_count_inversions(l-1, P0, p0_size)
                 + rec_count_inversions(l-1, P1, p1_size)
                 + count_inversions_tilde(l, P);
     }else{
-        h = DEFINED_L;
+        h = L;
     }
     return 0;
 };//}}}
 
-int count_inversions_tilde(int l, vector<UINT32>& P_tilde){//{{{
+int count_inversions_tilde(int l, vector<UINT16>& P_tilde){//{{{
     if( !(l>0) ){return 0;}
     int ret = 0;
     for(int i=0, end_i=P_tilde.size(); i<end_i; i++){
@@ -105,11 +104,11 @@ void normalizeQueryPoints(vector< pair<int,bool> >& P, vector< pair<int,bool> >&
     // cout << "------------------------------------------" << endl;
 };//}}}
 
-void dividingQueryPoints(int l, vector<UINT32>& P, int p_size, vector<UINT32>& P0, int* p0_size, vector<UINT32>& P1, int* p1_size){//{{{
+void dividingQueryPoints(int l, vector<UINT16>& P, int p_size, vector<UINT16>& P0, int* p0_size, vector<UINT16>& P1, int* p1_size){//{{{
     P0.resize(1, 0);
     P1.resize(1, 0);
     (*p0_size) = (*p1_size) = 0;
-    UINT32 mask = (1 << (l+1)) - 1;
+    UINT16 mask = (1 << (l+1)) - 1;
     for(int i=0, end_i=P.size(); i<end_i; i++){
         int end_j = (i != end_i-1) ? NUM_POINTS_IN_WORD(l) : (p_size % NUM_POINTS_IN_WORD(l));
         for(int j=end_j-1, j_shift=j*(l+1); j>=0; j_shift=(--j)*(l+1) ){
@@ -135,13 +134,13 @@ void dividingQueryPoints(int l, vector<UINT32>& P, int p_size, vector<UINT32>& P
     // showWords(l, P1);
 };//}}}
 
-void packingQueryPoints(int l, vector< pair<int, bool> >& P, vector<UINT32>& ret){//{{{
+void packingQueryPoints(int l, vector< pair<int, bool> >& P, vector<UINT16>& ret){//{{{
     if( ret.size() < NUM_WORDS(P.size(),l) ){
         fprintf(stderr, "need enough region for packing\n");
         exit(1);
     }
     for(int i=0, end_i=P.size(); i<end_i; i++){
-        UINT32 p_i = (UINT32)P[i].first;
+        UINT16 p_i = (UINT16)P[i].first;
         p_i = (P[i].second) ? ((p_i << 1) + 1) : (p_i << 1);
         ret[ WORD_INDEX(i,l) ] <<= (l + 1);
         ret[ WORD_INDEX(i,l) ] |= p_i;
@@ -154,7 +153,7 @@ int count_inversions(vector< pair<int, bool> >& P){//{{{
         l = (int)ceil( log2(p_size) );
     printf("P.size():%d, l:%d, # of points in a word:%d, # of words:%d\n", p_size, l, NUM_POINTS_IN_WORD(l), NUM_WORDS(p_size,l));
     vector< pair<int, bool> > normalizedP(p_size);
-    vector<UINT32> packedP(NUM_WORDS(p_size,l), 0);
+    vector<UINT16> packedP(NUM_WORDS(p_size,l), 0);
     // normalize given points in P
     normalizeQueryPoints(P, normalizedP);
     cout << "normalized P:\t";
