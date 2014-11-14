@@ -14,6 +14,7 @@
 #define UINT32 unsigned int
 #define UINT16 unsigned short
 #define DEFINED_w 16
+#define NUM_INTEGERS_PER_WORD(l) ((DEFINED_w)/(l))
 #define NUM_POINTS_IN_WORD(l) ((DEFINED_w)/(l+1)) // 'l' meand # of bits represeinting each p.y
                                                   // and the rest one bit is its color
 #define NUM_WORDS(n,l) ((int)(ceil((n)/(double)NUM_POINTS_IN_WORD(l))))
@@ -30,6 +31,121 @@ int count_inversions(vector< pair<int, bool> >&);
 void construstWordOperationTable(vector< vector< pair<UINT16, UINT16> > >&);
 void showWords(int, vector<UINT16>&);
 void showOneWord(int, UINT16);
+
+class PackedIntegers{
+private:
+    int n, l, rest, num_integerts_per_word;
+    UINT integer_mask;
+    void _append(int, UINT16);
+public:
+    ~PackedIntegers(){};
+    PackedIntegers(int l, vector<int>&);
+    vector<UINT16> words;
+    void append(int, UINT16);
+    void push_integert(int);
+    void showWords() const;
+    void showOneWord(UINT16) const;
+    UINT16 clipIntegersFromHead(int, int, UINT16) const;
+    UINT16 clipIntegersFromTail(int, int, UINT16) const;
+};
+PackedIntegers::PackedIntegers(int l, vector<int>& P)://{{{
+n(0), l(l), words(1,0), integer_mask((1 << l) - 1),
+num_integerts_per_word(NUM_INTEGERS_PER_WORD(l)), rest(NUM_INTEGERS_PER_WORD(l)){
+    // printf("l:%d, |P|:%d\n", l, (int)P.size());
+    for(int i=0, end_i=P.size(); i<end_i; i++){
+        if( !(P[i] < (1 << l)) ){
+            fprintf(stderr, "too large value in P\n");
+            exit(1);
+        }
+        push_integert(P[i]);
+        n++;
+    }
+
+    showWords();
+};//}}}
+void PackedIntegers::showWords() const{//{{{
+    cout << "--------------------------------" << endl;
+    for(int i=0; i<words.size(); i++){
+        printf("z[%d]: ", i);
+        for(int j=DEFINED_w-1; j>=0; j--){
+            cout << (bool)( words[i] & (1<<j) ) << " ";
+            if( !(j%l) ){ cout << " "; }
+        }
+        cout << endl;
+    }
+    cout << "--------------------------------" << endl;
+};//}}}
+void PackedIntegers::showOneWord(UINT16 z) const{//{{{
+    cout << "--------------------------------" << endl;
+    for(int j=DEFINED_w-1; j>=0; j--){
+        cout << (bool)( z & (1<<j) ) << " ";
+        if( !(j%l) ){ cout << " "; }
+    }
+    cout << endl;
+    cout << "--------------------------------" << endl;
+};//}}}
+void PackedIntegers::push_integert(int i){//{{{
+    if(rest == 0){
+        words.push_back(0);
+        rest = num_integerts_per_word;
+    }
+    if(rest > 0){
+        words[words.size()-1] <<= l;
+        words[words.size()-1] |= (UINT16)i;
+        n++;
+        rest--;
+    }else{
+        fprintf(stderr, "something wrong occurs\n");
+        exit(1);
+    }
+};//}}}
+void PackedIntegers::_append(int m, UINT16 w){//{{{
+    if( m > rest ){
+        fprintf(stderr, "overflow only %d bit(s) are remained. ""%d integerts are given.\n", rest, m);
+        exit(1);
+    }
+    words[words.size()-1] <<= (l * m);
+    words[words.size()-1] |= w;
+    n += m;
+    rest -= m;
+    if(rest == 0){ // reserve a space for the next word
+        words.push_back(0);
+        rest = num_integerts_per_word;
+    }
+};//}}}
+UINT16 PackedIntegers::clipIntegersFromHead(int m, int h, UINT16 w) const{//{{{
+    // clip h-integers from the HEAD of given word storing m-integers
+    if( h > m ){
+        fprintf(stderr, "do not exist enough integerts in given word\n");
+        exit(1);
+    }
+    UINT16 range_mask = ~( (1 << (l * (m - h))) - 1 );
+    // cout << "clipIntegersFromHead range_mask:" << endl;
+    // showOneWord(range_mask);
+    UINT16 clipped = (w & range_mask);
+    return (clipped >> (l * (m - h))); // shift right to remove useless bits
+};//}}}
+UINT16 PackedIntegers::clipIntegersFromTail(int m, int t, UINT16 w) const{//{{{
+    // clip t-integers from the Tail of given word storing m-integers
+    if( t > m ){
+        fprintf(stderr, "do not exist enough integerts in given word\n");
+        exit(1);
+    }
+    UINT16 range_mask = ((1 << (l * t)) - 1);
+    // cout << "clipIntegersFromTail range_mask:" << endl;
+    // showOneWord(range_mask);
+    return (w & range_mask);
+};//}}}
+void PackedIntegers::append(int m, UINT16 w){//{{{
+    // showOneWord(w);
+    if( m < rest ){
+        _append(m, w);
+    }else{
+        int head = rest; // preserve the value of rest-variable to use later
+        _append(head, clipIntegersFromHead(m, rest, w));
+        _append(m-head, clipIntegersFromTail(m, m-head, w));
+    }
+};//}}}
 
 void showWords(int l, vector<UINT16>& z){//{{{
     for(int i=0; i<z.size(); i++){
@@ -288,6 +404,11 @@ int count_inversions(vector< pair<int, bool> >& P){//{{{
     cout << endl;
     // pack some points into a word
     packingQueryPoints(l, normalizedP, packedP);
+
+    vector<int> _P(normalizedP.size());
+    for(int i=0; i<_P.size(); i++){ _P[i] = normalizedP[i].first; }
+    PackedIntegers pack(l, _P);
+
     printf("points in P are packed:\n");
     showWords(l+1, packedP);
 
