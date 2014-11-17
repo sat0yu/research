@@ -22,7 +22,6 @@ using namespace std;
 
 int test_for_bitvector(int);
 int test_for_wavelettree(int, int, int);
-int test_for_inversioncounting(int);
 int test_for_rangecounting(int);
 int comparison_kgram_vector_construct(int, int, int);
 void naive_natRepKgramVector(vector<int>&, int, natRepKgramVector&);
@@ -35,7 +34,6 @@ int main(){
     // int wt_textsize = 1000, wt_alphabetsize = 1000, k=10;
     // test_for_wavelettree(wt_textsize, wt_alphabetsize, k);
     int rc_textsize = 1000;
-    test_for_inversioncounting(rc_textsize);
     test_for_rangecounting(rc_textsize);
 }
 
@@ -213,54 +211,6 @@ int test_for_wavelettree(int length, int range, int k){//{{{
     return 0;
 };//}}}
 
-int test_for_inversioncounting(int length){//{{{
-    for(int _i=2; _i<length; _i<<=1){
-        int i = _i + (rand() % _i);
-
-        vector< pair<int,bool> > S(i);
-        for(int j=0; j<i; j++){
-            S[j].first = rand() % i;
-            S[j].second = rand() % 2;
-        }
-        printf("\na test in the condition |T|=%d starts;\n", i);
-        cout << "raw P:\t\t";
-        for(int j=0; j<i; j++){
-            printf("%d(%d) ", S[j].first, S[j].second);
-        }
-        cout << endl;
-
-        clock_t s_time;
-        double duration = 0.;
-        bool result = true;
-
-        int naive_inversion_count=0;
-        for(int j=0; j<i; ++j){
-            if(S[j].second){
-                for(int k=0; k<j; ++k){
-                    if( !S[k].second and (S[k].first <= S[j].first) ){
-                        naive_inversion_count++;
-                    }
-                }
-            }
-        }
-
-        int inversion_count = 0;
-        s_time = clock();
-        inversion_count = count_inversions(S);
-        duration += (clock() - s_time);
-
-        if( naive_inversion_count != inversion_count ){
-            printf("naive: %d, InversionCounting:%d\n", naive_inversion_count, inversion_count);
-            result = false;
-        }
-
-        if(!result){ exit(1); }
-        duration = (double)(duration) / (double)CLOCKS_PER_SEC;
-        printf("InversionCounting test: OK\t %.10lf [s]\n", duration);
-    }
-    return 0;
-};//}}}
-
 int test_for_rangecounting(int length){//{{{
     for(int _i=2; _i<length; _i<<=1){
         int i = _i + (rand() % _i);
@@ -270,40 +220,38 @@ int test_for_rangecounting(int length){//{{{
         printf("\na test in the condition |T|=%d starts;\n", i);
 
         clock_t s_time;
-        double duration;
+        double construct_duration, query_duration;
         bool result;
 
         s_time = clock();
         // <construst an instance>
         RangeCounting rc(S);
         // </construst an instance>
-        duration = clock() - s_time;
-        duration = (double)(duration) / (double)CLOCKS_PER_SEC;
-        printf("construction: OK \t %f [s]\n", duration);
+        construct_duration = clock() - s_time;
+        construct_duration = (double)(construct_duration) / (double)CLOCKS_PER_SEC;
+        printf("construction: OK \t %f [s]\n", construct_duration);
 
-        // <a test for rangemaxk>
+        // <a test for rangecounting>
         result = true;
-        duration = 0.;
+        query_duration = 0.;
         for(int j=0; j<i; ++j){
-            for(int k=0; k<j; ++k){
-                int naive=0;
-                for(int l=0; l<k; l++){
-                    if( S[l] < S[k] ){ naive++; }
-                }
+            int naive=0;
+            for(int k=0; k<j; k++){
+                if( S[k] < S[j] ){ naive++; }
+            }
 
-                s_time = clock();
-                int rc_query = rc.query(k, S[k]);
-                duration += (clock() - s_time);
-                if( naive != rc_query ){
-                    printf("naive: %d, RangeCounting:%d\n", naive, rc_query);
-                    result = false;
-                }
+            s_time = clock();
+            int rc_query = rc.query(j);
+            query_duration += (clock() - s_time);
+            if( naive != rc_query ){
+                printf("RangeCount query(%d): naive: %d, RangeCounting:%d\n", j, naive, rc_query);
+                result = false;
             }
         }
         if(!result){ exit(1); }
-        // </a test for rangemaxk>
-        duration = (double)(duration) / (double)CLOCKS_PER_SEC;
-        printf("RC.query test: OK\t %.10lf [s]\n", duration);
+        // </a test for rangecounting>
+        query_duration = (double)(query_duration) / (double)CLOCKS_PER_SEC;
+        printf("RC.query test: OK\t %.10lf [s]\n", query_duration / i);
     }
     return 0;
 };//}}}
