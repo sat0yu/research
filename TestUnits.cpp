@@ -15,23 +15,30 @@
 #include<ctime>
 
 #include "./WaveletTree.h"
+#include "./RangeCounting.h"
 
 using namespace std;
 
+
 int test_for_bitvector(int);
 int test_for_wavelettree(int, int, int);
-int test_for_kgram_vector_construction(int, int, int);
+int test_for_rangecounting(int);
+int comparison_kgram_vector_construct(int, int, int);
 void naive_natRepKgramVector(vector<int>&, int, natRepKgramVector&);
 void naive_rangeCountingKgramVector(vector<int>&, int, rangeCountingKgramVector&);
 void naive_rangeCountingKgramVectorWithSliding(vector<int>&, int, rangeCountingKgramVector&);
 
 int main(){
     srand(time(0));
+
     int bv_textsize = 10000;
     test_for_bitvector(bv_textsize);
     int wt_textsize = 1000, wt_alphabetsize = 1000, k=10;
     test_for_wavelettree(wt_textsize, wt_alphabetsize, k);
-    test_for_kgram_vector_construction(wt_textsize, wt_alphabetsize, k);
+    int rc_textsize = 1000;
+    test_for_rangecounting(rc_textsize);
+
+    printf("\nAll Tests are passed. Acceptance\n");
 }
 
 int test_for_bitvector(int N){//{{{
@@ -208,7 +215,52 @@ int test_for_wavelettree(int length, int range, int k){//{{{
     return 0;
 };//}}}
 
-int test_for_kgram_vector_construction(int length, int range, int k){//{{{
+int test_for_rangecounting(int length){//{{{
+    for(int _i=2; _i<length; _i<<=1){
+        int i = _i + (rand() % _i);
+
+        vector<int> S(i);
+        for(int j=0; j<i; j++){ S[j] = rand() % i; }
+        printf("\na test in the condition |T|=%d starts;\n", i);
+
+        clock_t s_time;
+        double construct_duration, query_duration;
+        bool result;
+
+        s_time = clock();
+        // <construst an instance>
+        RangeCounting rc(S);
+        // </construst an instance>
+        construct_duration = clock() - s_time;
+        construct_duration = (double)(construct_duration) / (double)CLOCKS_PER_SEC;
+        printf("construction: OK \t %f [s]\n", construct_duration);
+
+        // <a test for rangecounting>
+        result = true;
+        query_duration = 0.;
+        for(int j=0; j<i; ++j){
+            int naive=0;
+            for(int k=0; k<j; k++){
+                if( S[k] < S[j] ){ naive++; }
+            }
+
+            s_time = clock();
+            int rc_query = rc.query(j);
+            query_duration += (clock() - s_time);
+            if( naive != rc_query ){
+                printf("RangeCount query(%d): naive: %d, RangeCounting:%d\n", j, naive, rc_query);
+                result = false;
+            }
+        }
+        if(!result){ exit(1); }
+        // </a test for rangecounting>
+        query_duration = (double)(query_duration) / (double)CLOCKS_PER_SEC;
+        printf("RC.query test: OK\t %.10lf [s]\n", query_duration / i);
+    }
+    return 0;
+};//}}}
+
+int comparison_kgram_vector_construct(int length, int range, int k){//{{{
     for(int _i=2; _i<range; _i<<=1){
         int i = _i + (rand() % _i);
         for(int _j=1; _j<length; _j<<=1){
