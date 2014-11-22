@@ -23,12 +23,6 @@
 
 using namespace std;
 
-// void normalizeQueryPoints(vector< pair<int,bool> >&, vector< pair<int,bool> >&);
-// int count_inversions(vector< pair<int, bool> >&);
-void showWords(int, vector<UINT16>&);
-void showOneWord(int, UINT16);
-int count16bit(UINT16);
-
 struct Word{
 private:
 public:
@@ -264,103 +258,6 @@ void PackedIntegers::sequence(vector<int>& res){//{{{
 };//}}}
 
 
-// void normalizeQueryPoints(vector< pair<int,bool> >& P, vector< pair<int,bool> >& ret){//{{{
-//     // normalizetion: make each value unique and carry out bucket sort
-//     vector<int> charCount(UB_ALPHABET_SIZE, 0),
-//                 insetingIndices(UB_ALPHABET_SIZE);
-//     //  // count the occurence for each character
-//     vector< pair<int, bool> >::iterator it_s=P.begin(), end_it_s=P.end();
-//     for(; it_s!=end_it_s; it_s++){
-//         charCount[it_s->first]++;
-//     }
-//     //  // inseting indices(, that is to be updated)
-//     for(int i=0, rank=0, end_i=charCount.size(); i<end_i; i++){
-//         insetingIndices[i] = rank;
-//         rank += charCount[i];
-//     }
-//     //  // bucket sort
-//     int p_size = P.size();
-//     vector<int> sortedP(p_size),
-//                 sortingArray(p_size);
-//     for(int i=0; i<p_size; i++){
-//         sortedP[ insetingIndices[ P[i].first ] ] = P[i].first;
-//         sortingArray[ insetingIndices[ P[i].first ] ] = i;
-//         insetingIndices[ P[i].first ]++;
-//     }
-//     //  // create inverseSortingArray and normalizedP
-//     for(int i=0, sa_i=sortingArray[i]; i<p_size; sa_i=sortingArray[++i]){
-//         ret[ sa_i ] = pair<int, bool>(i, P[ sa_i ].second);
-//     }
-//     // cout << "--- (debug) -------------------------------" << endl;
-//     // for(int i=0; i<p_size; i++){ cout << P[i].first << " ";}
-//     // cout << endl;
-//     // for(int i=0; i<p_size; i++){ cout << sortedP[i] << " ";}
-//     // cout << endl;
-//     // for(int i=0; i<p_size; i++){ cout << sortingArray[i] << " ";}
-//     // cout << endl;
-//     // for(int i=0; i<p_size; i++){ printf("%d(%d) ", ret[i].first, ret[i].second); }
-//     // cout << endl;
-//     // cout << "------------------------------------------" << endl;
-// };//}}}
-// int count_inversions(vector< pair<int, bool> >& P){//{{{
-//     const static int L = (int)ceil(sqrt(WORD_SIZE)) + 1;
-//     vector< vector< pair<UINT16, UINT16> > > // the table for O(1) word operation
-//         table(L, vector< pair<UINT16, UINT16> >((1<<WORD_SIZE), pair<UINT16, UINT16>(0,0)));
-//     construstWordOperationTable(table);
-//     vector<int> countingTable((1 << WORD_SIZE), 0); // the table for O(1) word operation
-//     for(int i=0, end_i=countingTable.size(); i<end_i; i++){
-//         countingTable[i] = count16bit( (UINT16)i );
-//     }
-//
-//     int p_size = P.size(),
-//         l = (int)ceil( log2(p_size) );
-//     printf("P.size():%d, l:%d, # of points in a word:%d, # of words:%d\n",
-//             p_size, l, NUM_POINTS_IN_WORD(l), NUM_WORDS(p_size,l));
-//     vector< pair<int, bool> > normalizedP(p_size);
-//     vector<UINT16> packedP(NUM_WORDS(p_size,l), 0);
-//     // normalize given points in P
-//     normalizeQueryPoints(P, normalizedP);
-//     cout << "normalized P:\t";
-//     for(int j=0; j<p_size; j++){
-//         printf("%d(%d) ", normalizedP[j].first, normalizedP[j].second);
-//     }
-//     cout << endl;
-//     // pack some points into a word
-//     packingQueryPoints(l, normalizedP, packedP);
-//
-//     vector<int> _P(normalizedP.size());
-//     for(int i=0; i<_P.size(); i++){ _P[i] = normalizedP[i].first; }
-//     PackedIntegers pack(l, _P);
-//
-//     printf("points in P are packed:\n");
-//     showWords(l+1, packedP);
-//
-//     return rec_count_inversions(table, countingTable, l, packedP, p_size);
-// };//}}}
-void showWords(int l, vector<UINT16>& z){//{{{
-    for(int i=0; i<z.size(); i++){
-        printf("z[%d]: ", i);
-        for(int j=WORD_SIZE-1; j>=0; j--){
-            cout << (bool)( z[i] & (1<<j) ) << " ";
-            if( !(j%l) ){ cout << " "; }
-        }
-        cout << endl;
-    }
-};//}}}
-void showOneWord(int l, UINT16 z){//{{{
-    for(int j=WORD_SIZE-1; j>=0; j--){
-        cout << (bool)( z & (1<<j) ) << " ";
-        if( !(j%l) ){ cout << " "; }
-    }
-    cout << endl;
-};//}}}
-int count16bit(UINT16 v){//{{{
-    unsigned short count = (v & 0x5555) + ((v >> 1) & 0x5555);
-    count = (count & 0x3333) + ((count >> 2) & 0x3333);
-    count = (count & 0x0f0f) + ((count >> 4) & 0x0f0f);
-    return (count & 0x00ff) + ((count >> 8) & 0x00ff);
-}//}}}
-
 class RangeCounting{
 private:
     static vector< vector< pair<UINT16, UINT16> > > *splitingTable;
@@ -379,6 +276,7 @@ private:
     void constructInCase2();
     void constructSplitingTable();
     void dividePackedIntegersIntoPow2(int, PackedIntegers&, vector<PackedIntegers>&);
+    int count16bit(UINT16) const;
 public:
     ~RangeCounting(){
         if( case1_pTilde != NULL ){ delete case1_pTilde; }
@@ -496,6 +394,12 @@ void RangeCounting::constructSplitingTable(){//{{{
             (*splitingTable)[wi][l].second = P1;
         }
     }
+}//}}}
+int RangeCounting::count16bit(UINT16 v) const{//{{{
+    unsigned short count = (v & 0x5555) + ((v >> 1) & 0x5555);
+    count = (count & 0x3333) + ((count >> 2) & 0x3333);
+    count = (count & 0x0f0f) + ((count >> 4) & 0x0f0f);
+    return (count & 0x00ff) + ((count >> 8) & 0x00ff);
 }//}}}
 void RangeCounting::dividePackedIntegersIntoPow2(int h, PackedIntegers& P, vector<PackedIntegers>& res){//{{{
     if( res.size() < (1 << h) ){
