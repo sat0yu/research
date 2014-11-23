@@ -449,8 +449,13 @@ void RangeCounting::constructInCase00(){//{{{
         pi.constructDataStructure();
         case00_sublists.push_back(pi);
     }
-    vector<int> _P(P.begin() + st, P.end()); // for the last block
+    vector<int> _P(P.begin() + st, P.end()); // for the rest of P
     PackedIntegers pi(H, _P);
+    pi.constructDataStructure();
+    case00_sublists.push_back(pi);
+
+    vector<int> P_last(0); // for the last block as a dummy
+    pi = PackedIntegers(H, P_last);
     pi.constructDataStructure();
     case00_sublists.push_back(pi);
     // printf("create sublists\n");
