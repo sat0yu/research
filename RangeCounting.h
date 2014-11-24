@@ -315,8 +315,11 @@ public:
     int queryCase1(int);
     int queryCase1(int, int);
     int queryCase2(int);
+    int queryCase2(int, int);
     int query(int);
     int query(int, int);
+    void createRangeCountingKgramVector(vector<int>&, int, rangeCountingKgramVector&);
+    void createRangeCountingKgramVectorWithSliding(vector<int>&, int, rangeCountingKgramVector&);
 };
 vector< vector< pair<UINT_WORD, UINT_WORD> > > *RangeCounting::splitingTable = NULL;
 RangeCounting::RangeCounting(const RangeCounting& rhs)://{{{
@@ -681,6 +684,29 @@ int RangeCounting::queryCase2(int x){//{{{
     // printf("----- step out queryCase2: x:%d\n", x);
     // return ret1+ret2;
 }//}}}
+int RangeCounting::queryCase2(int x, int y){//{{{
+    // printf("----- step in queryCase2: x:%d, y:%d\n", x, y);
+    if( !( y < (1 << l) ) ){ return x; }
+    int tilde_y = ( y >> (l - L) ),
+        pi_y = (y & ( (1 << (l - L)) - 1 )),
+        pi_x = (*case2_pTilde).query(x, tilde_y+1) - (*case2_pTilde).query(x, tilde_y);
+    // debug
+    // printf("queryCase2: x:%d, tilde_y:%d\n", x, tilde_y);
+    // int plus1 = (*case2_pTilde).query(x, tilde_y+1);
+    // printf("case2 tilde_y+1:\t %d\n", plus1);
+    // int plus0 = (*case2_pTilde).query(x, tilde_y);
+    // printf("case2 tilde_y:\t %d\n", plus0);
+    // int pi_x = plus1 - plus0;
+
+    return (*case2_pTilde).query(x, tilde_y) + case2_sublists[tilde_y].query(pi_x, pi_y);
+    // debug
+    // int ret1 = (*case2_pTilde).query(x);
+    // printf("(*case2_pTilde).query(%d):%d\n", x, ret1);
+    // int ret2 = case2_sublists[tilde_y].query(pi_x);
+    // printf("case2_sublists[%d].query(%d):%d\n", tilde_y, pi_x, ret2);
+    // printf("----- step out queryCase2: x:%d\n", x);
+    // return ret1+ret2;
+}//}}}
 int RangeCounting::query(int x){//{{{
     if( n == 0 ){
         // cout << "*** query: case(-1) ***" << endl;
@@ -721,11 +747,72 @@ int RangeCounting::query(int x, int y){//{{{
     }else if( (H < l) and (l <= L) ){ // case: 1
         // cout << "*** query: case1 ***" << endl;
         return queryCase1(x, y);
+    }else if( l > L ){ // case: 2
+        // cout << "*** query: case2 ***" << endl;
+        return queryCase2(x, y);
     }else{
         fprintf(stderr, "not matched for any case\n");
         exit(1);
     }
     return 0;
+};//}}}
+void RangeCounting::createRangeCountingKgramVector(vector<int>& S, int k, rangeCountingKgramVector& res){//{{{
+    vector<rc_code> kgram(k);
+    for(int i=0, end_i=n-k+1; i<end_i; i++){
+        for(int j=0; j<k; ++j){
+            int rc_ij_Sij   = query(i+j),
+                rc_i_Sij    = query(i, S[i+j]);
+            kgram[j] = rc_code(
+                        // RangeCountingQuery( (i+j, S[i+j]), (i, 0) )
+                        rc_ij_Sij - rc_i_Sij,
+                        // RangeCountingQuery( (i+j, S[i+j]+1), (i, S[i+j]) )
+                        query(i+j, S[i+j]+1) - query(i, S[i+j]+1) - rc_ij_Sij + rc_i_Sij
+                    );
+        }
+
+        if( res.find(kgram) == res.end() ){ /* regist the kgram */
+            res[kgram] = 1;
+        }else{
+            res[kgram]++;
+        }
+    }
+};//}}}
+void RangeCounting::createRangeCountingKgramVectorWithSliding(vector<int>& S, int k, rangeCountingKgramVector& res){//{{{
+    vector<rc_code> kgram(k);
+    for( int j=0, lt, eq; j<k; ++j ){ // the first kgram is calcucated naively
+        int rc_ij_Sij = query(j);
+        kgram[j] = rc_code(
+                    // RangeCountingQuery( (j, S[j]), (0, 0) )
+                    rc_ij_Sij,
+                    // RangeCountingQuery( (j, S[j]+1), (0, S[j]) )
+                    query(j, S[j]+1) - rc_ij_Sij
+                );
+    }
+    res[kgram] = 1;
+
+    for(int i=1, end_i=n-k+1, lt, eq; i<end_i; i++){
+        for(int j=0; j<k-1; ++j){ // utilize the past-head value
+            if(S[i-1] < S[i+j]){
+                kgram[j+1].first--;
+            }else if(S[i-1] == S[i+j]){
+                kgram[j+1].second--;
+            }
+            kgram[j] = kgram[j+1];
+        }
+
+        int rc_ij_Sij   = query(i+k-1), // the new-tail value is given by RC query
+            rc_i_Sij    = query(i, S[i+k-1]);
+        kgram[k-1] = rc_code(
+                    rc_ij_Sij - rc_i_Sij,
+                    query(i+k-1, S[i+k-1]+1) - query(i, S[i+k-1]+1) - rc_ij_Sij + rc_i_Sij
+                );
+
+        if( res.find(kgram) == res.end() ){ /* regist the kgram */
+            res[kgram] = 1;
+        }else{
+            res[kgram]++;
+        }
+    }
 };//}}}
 
 /* vim:set foldmethod=marker commentstring=//%s : */
