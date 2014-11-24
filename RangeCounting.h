@@ -10,15 +10,15 @@
 #include<math.h>
 #include<ctime>
 
-#define WORD_SIZE 16 // w: 16 bits ( w = epsilon * log(n), then 2^16 = 65536 )
-#define L 4 // L: ceil( sqrt(WORD_SIZE) )
-#define A 6 // A: (1 + epsilon) * ceil( log(WORD_SIZE) ), given epsilon=1/2, A is 6
-#define H 2 // H: epsilon * ceil( log(WORD_SIZE) ), given epsilon=1/2, H is 2
+#define WORD_SIZE 32 // w: 32 bits ( w = epsilon * log(n) )
+#define L 6 // L: ceil( sqrt(WORD_SIZE) )
+#define A 8 // A: (1 + epsilon) * ceil( log(WORD_SIZE) ), given epsilon=3/5, A is 8
+#define H 3 // H: epsilon * ceil( log(WORD_SIZE) ), given epsilon=3/5, H is 3
 
 #define UINT64 unsigned long long
 #define UINT32 unsigned int
 #define UINT16 unsigned short
-#define UINT_WORD unsigned short
+#define UINT_WORD unsigned int
 #define BITS_OF(x) (8 * (int)sizeof(x))
 #define MIN(x,y) (((x) < (y)) ? (x) : (y))
 
@@ -38,6 +38,7 @@ public:
     void append(int, UINT_WORD);
     void push_back(int);
     void showBits() const;
+    void split(UINT_WORD*, int*, UINT_WORD*, int*) const;
     int lessThan(int) const;
     int lessThanAt(int) const;
     int lessThanAt(int, int) const;
@@ -68,6 +69,19 @@ void Word::showBits() const{//{{{
         if( !(j%l) ){ cout << " "; }
     }
     cout << endl;
+};//}}}
+void Word::split(UINT_WORD *p0, int *num_p0, UINT_WORD *p1, int *num_p1) const{//{{{
+    (*p0) = (*p1) = (*num_p0) = (*num_p1) = 0; // initialize
+    UINT_WORD mask = (1 << (l-1)) - 1;
+    for(int i = 0; i < n; i++){
+        // extract each integer
+        UINT_WORD integer = (int)( ( bits & ( head_mask << (i * l) ) ) >> (i * l) );
+        if( integer & (~mask) ){
+            (*p1) |= ( integer & mask ) << ( ((*num_p1)++) * (l-1) );
+        }else{
+            (*p0) |= ( integer & mask ) << ( ((*num_p0)++) * (l-1) );
+        }
+    }
 };//}}}
 int Word::lessThan(int i) const{//{{{
     // // return the number of points p_i in the word,
@@ -444,11 +458,17 @@ void RangeCounting::divideIntoPow2(int h, PackedIntegers& P, vector<PackedIntege
     for(int i = 1, end_i = (1 << h); i < end_i; i++){
         PackedIntegers pi = p_tree[i]; // divide each word in P_i
         for(int j = 0, end_j = pi.words.size(); j < end_j; j++){
+            // ===== IN THE CASE USING SPLITINGTABLE =====
             // mask the current word and count one bit in the masked word
-            int num_p1 = count32bit( (UINT_WORD)(pi.words[j].bits & pi.counting_mask) ),
-                num_p0 = pi.words[j].n - num_p1;
-            UINT_WORD p0 = (*splitingTable)[ pi.words[j].bits ][ pi.l ].first,
-                      p1 = (*splitingTable)[ pi.words[j].bits ][ pi.l ].second;
+            // int num_p1 = count32bit( (UINT_WORD)(pi.words[j].bits & pi.counting_mask) ),
+            //     num_p0 = pi.words[j].n - num_p1;
+            // UINT_WORD p0 = (*splitingTable)[ pi.words[j].bits ][ pi.l ].first,
+            //           p1 = (*splitingTable)[ pi.words[j].bits ][ pi.l ].second;
+
+            // ===== IN THE CASE SPLITING EACH WORD IN O(WORD_SIZE/l) =====
+            int num_p0, num_p1;
+            UINT_WORD p0, p1;
+            pi.words[j].split(&p0, &num_p0, &p1, &num_p1);
             p_tree[(i << 1)].append(num_p0, p0);
             p_tree[(i << 1) + 1].append(num_p1, p1);
         }
@@ -543,8 +563,11 @@ void RangeCounting::constructInCase00(){//{{{
 };//}}}
 void RangeCounting::constructInCase1(){//{{{
     PackedIntegers _P(L, P);
+
+    // ===== IN THE CASE USING SPLITINGTABLE =====
+    // constructSplitingTable();
+
     // divide given P into P_0, P_1, ..., P_(2^H-1)
-    constructSplitingTable();
     vector<PackedIntegers> P_i( (1 << H) );
     divideIntoPow2(H, _P, P_i);
     case1_sublists = vector<RangeCounting>();
@@ -627,7 +650,7 @@ int RangeCounting::queryCase1(int x, int y){//{{{
         // divide y by 2^(L-H), then tilde_y is in [0, 2^H]
         tilde_y = ( y >> (L - H) ),
         // the remainder, that corresponds pi_y, is in [0, 2^(L-H))
-        pi_y = (y & ( (1 << H) - 1 )),
+        pi_y = (y & ( (1 << (L - H)) - 1 )),
         pi_x = (*case1_pTilde).query(x, tilde_y+1) - (*case1_pTilde).query(x, tilde_y);
     // int plus1 = (*case1_pTilde).query(x, tilde_y+1);
     // printf(" case1 plus1: %d\n", plus1);
@@ -637,16 +660,16 @@ int RangeCounting::queryCase1(int x, int y){//{{{
     return (*case1_pTilde).query(x, tilde_y) + case1_sublists[tilde_y].query(pi_x, pi_y);
 }//}}}
 int RangeCounting::queryCase2(int x){//{{{
-    // printf("----- step in queryCase2: x:%d\n", x);
+    // printf("----- step in queryCase2: x:%d, P[%d]:%d\n", x, x, P[x]);
     int tilde_y = (*case2_pTilde).P.at(x);
 
     int pi_x = (*case2_pTilde).query(x, tilde_y+1) - (*case2_pTilde).query(x, tilde_y);
     // debug
     // printf("queryCase2: x:%d, tilde_y:%d\n", x, tilde_y);
     // int plus1 = (*case2_pTilde).query(x, tilde_y+1);
-    // printf("case2 plus1: %d\n", plus1);
+    // printf("case2 tilde_y+1:\t %d\n", plus1);
     // int plus0 = (*case2_pTilde).query(x, tilde_y);
-    // printf("case2 plus0: %d\n", plus0);
+    // printf("case2 tilde_y:\t %d\n", plus0);
     // int pi_x = plus1 - plus0;
 
     return (*case2_pTilde).query(x) + case2_sublists[tilde_y].query(pi_x);
