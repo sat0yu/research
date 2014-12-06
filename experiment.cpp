@@ -26,17 +26,20 @@ int comparison_kgram_vector_construct(const int*, int, const int*, int, const in
 
 int main(){
     srand(0);
-    const int length_list[] = {\
-        2,3,4,5,6,7,8,9,\
-        10,20,30,40,50,60,70,80,90,\
-        100,200,300,400,500,600,700,800,900,\
-        1000,2000,3000,4000,5000,6000,7000,8000,9000,10000};
-    const int sigma_list[] = {10,100,1000,10000};
+    const int length_list[] = {100000};
+    const int sigma_list[] = {1000};
     const int k_list[] = {\
-        2,3,4,5,6,7,8,9,\
-        10,20,30,40,50,60,70,80,90,\
-        100,200,300,400,500,600,700,800,900,\
-        1000,2000,3000,4000,5000,6000,7000,8000,9000,10000};
+            1, 2, 3, 4, 5, 6, 7, 8, 9,\
+        10,11,12,13,14,15,16,17,18,19,\
+        20,21,22,23,24,25,26,27,28,29,\
+        30,31,32,33,34,35,36,37,38,39,\
+        40,41,42,43,44,45,46,47,48,49,\
+        50,51,52,53,54,55,56,57,58,59,\
+        60,61,62,63,64,65,66,67,68,69,\
+        70,71,72,73,74,75,76,77,78,79,\
+        80,81,82,83,84,85,86,87,88,89,\
+        90,91,92,93,94,95,96,97,98,99,\
+        100};
     // const int length_list[] = {10,100,1000,10000};
     // const int sigma_list[] = {10,100,1000,10000};
     // const int k_list[] = {10,100,1000,10000};
@@ -46,7 +49,7 @@ int main(){
     comparison_kgram_vector_construct(
             length_list, length_list_size,
             sigma_list, sigma_list_size,
-            k_list, k_list_size, 10);
+            k_list, k_list_size, 100);
 }
 
 void naive_natRepKgramVector(vector<int>& S, int k, natRepKgramVector& res){//{{{
@@ -184,45 +187,46 @@ int comparison_kgram_vector_construct(//{{{
                     // </construst an instance>
                     rc_construct_duration += (clock() - s_time);
 
-                    natRepKgramVector naive_nat_vec, wt_nat_vec;
-                    rangeCountingKgramVector naive_iterate_rc_vec,
-                                             naive_slide_rc_vec,
-                                             wt_iterate_rc_vec,
-                                             wt_slide_rc_vec,
-                                             rc_iterate_rc_vec,
-                                             rc_slide_rc_vec;
+                    // s_time = clock();
+                    // naive_natRepKgramVector(S, k, naive_nat_vec);
+                    // naive_nat_duration += (clock() - s_time);
 
-                    s_time = clock();
-                    naive_natRepKgramVector(S, k, naive_nat_vec);
-                    naive_nat_duration += (clock() - s_time);
+                    // s_time = clock();
+                    // naive_rangeCountingKgramVector(S, k, naive_iterate_rc_vec);
+                    // naive_iterate_duration += (clock() - s_time);
 
-                    s_time = clock();
-                    naive_rangeCountingKgramVector(S, k, naive_iterate_rc_vec);
-                    naive_iterate_duration += (clock() - s_time);
+                    {
+                        s_time = clock();
+                        rangeCountingKgramVector naive_slide_rc_vec;
+                        naive_rangeCountingKgramVectorWithSliding(S, k, naive_slide_rc_vec);
+                        naive_sliding_duration += (clock() - s_time);
+                    }
 
-                    s_time = clock();
-                    naive_rangeCountingKgramVectorWithSliding(S, k, naive_slide_rc_vec);
-                    naive_sliding_duration += (clock() - s_time);
+                    // s_time = clock();
+                    // wt.createNatRepKgramVector(S, k, wt_nat_vec);
+                    // wt_nat_duration += (clock() - s_time);
 
-                    s_time = clock();
-                    wt.createNatRepKgramVector(S, k, wt_nat_vec);
-                    wt_nat_duration += (clock() - s_time);
+                    // s_time = clock();
+                    // wt.createRangeCountingKgramVector(S, k, wt_iterate_rc_vec);
+                    // wt_iterate_duration += (clock() - s_time);
 
-                    s_time = clock();
-                    wt.createRangeCountingKgramVector(S, k, wt_iterate_rc_vec);
-                    wt_iterate_duration += (clock() - s_time);
+                    {
+                        s_time = clock();
+                        rangeCountingKgramVector wt_slide_rc_vec;
+                        wt.createRangeCountingKgramVectorWithSliding(S, k, wt_slide_rc_vec);
+                        wt_sliding_duration += (clock() - s_time);
+                    }
 
-                    s_time = clock();
-                    wt.createRangeCountingKgramVectorWithSliding(S, k, wt_slide_rc_vec);
-                    wt_sliding_duration += (clock() - s_time);
+                    // s_time = clock();
+                    // rc.createRangeCountingKgramVector(S, k, rc_iterate_rc_vec);
+                    // rc_iterate_duration += (clock() - s_time);
 
-                    s_time = clock();
-                    rc.createRangeCountingKgramVector(S, k, rc_iterate_rc_vec);
-                    rc_iterate_duration += (clock() - s_time);
-
-                    s_time = clock();
-                    rc.createRangeCountingKgramVectorWithSliding(S, k, rc_slide_rc_vec);
-                    rc_sliding_duration += (clock() - s_time);
+                    {
+                        s_time = clock();
+                        rangeCountingKgramVector rc_slide_rc_vec;
+                        rc.createRangeCountingKgramVectorWithSliding(S, k, rc_slide_rc_vec);
+                        rc_sliding_duration += (clock() - s_time);
+                    }
                 }
                 wt_construct_duration /= (double)CLOCKS_PER_SEC * loop;
                 rc_construct_duration /= (double)CLOCKS_PER_SEC;
@@ -232,8 +236,8 @@ int comparison_kgram_vector_construct(//{{{
                 naive_nat_duration /= (double)CLOCKS_PER_SEC * loop;
                 naive_iterate_duration /= (double)CLOCKS_PER_SEC * loop;
                 naive_sliding_duration /= (double)CLOCKS_PER_SEC * loop;
-                rc_iterate_duration /= (double)CLOCKS_PER_SEC;
-                rc_sliding_duration /= (double)CLOCKS_PER_SEC;
+                rc_iterate_duration /= (double)CLOCKS_PER_SEC * loop;
+                rc_sliding_duration /= (double)CLOCKS_PER_SEC * loop;
                 // printf("(|T|=%d, sigma=%d, k=%d) WT(construction):%.10lf, RC(construction):%.10lf, "
                 //         "WT(nat):%.10lf, WT(iterate):%.10lf, WT(slide):%.10lf, "
                 //         "naive(nat):%.10lf, naive(iterate):%.10lf, naive(slide):%.10lf, "
