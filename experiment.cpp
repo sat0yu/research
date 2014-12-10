@@ -27,7 +27,8 @@ int comparison_kgram_vector_construct(const int*, int, const int*, int, const in
 int main(){
     srand(0);
     const int length_list[] = {100000};
-    const int sigma_list[] = {\
+    const int sigma_list[] = {1000};
+    const int k_list[] = {\
               100, 200, 300, 400, 500, 600, 700, 800, 900,\
         1000,1100,1200,1300,1400,1500,1600,1700,1800,1900,\
         2000,2100,2200,2300,2400,2500,2600,2700,2800,2900,\
@@ -39,7 +40,6 @@ int main(){
         8000,8100,8200,8300,8400,8500,8600,8700,8800,8900,\
         9000,9100,9200,9300,9400,9500,9600,9700,9800,9900,\
         10000};
-    const int k_list[] = {10,100,1000};
     // const int length_list[] = {10,100,1000,10000};
     // const int sigma_list[] = {10,100,1000,10000};
     // const int k_list[] = {10,100,1000,10000};
