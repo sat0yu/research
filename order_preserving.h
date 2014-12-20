@@ -17,6 +17,7 @@ void naive_countingCodingKgramVector(vector<int>&, int, countingCodingKgramVecto
 void naive_countingCodingKgramVectorWithSliding(vector<int>&, int, countingCodingKgramVector&);
 void kgramVector_SuffixCountingCoding(vector<int>&, int, suffixCountingCodingKgramVector&);
 void kgramVector_SuffixCountingCodingAndWindowSliding(vector<int>&, int, suffixCountingCodingKgramVector&);
+void kgramVector_CountingCodingAndWindowSlidingWithoutCharacterOracle(vector<int>&, int, countingCodingKgramVector&);
 
 void naive_natRepKgramVector(vector<int>& S, int k, natRepKgramVector& res){//{{{
     vector<int> substring(k), kgram(k);
@@ -169,4 +170,45 @@ void kgramVector_SuffixCountingCodingAndWindowSliding(vector<int>& S, int k, suf
     }
 }//}}}
 
+void kgramVector_CountingCodingAndWindowSlidingWithoutCharacterOracle(\
+        vector<int>& S, int k, countingCodingKgramVector& res){
+    vector<c_code> kgram(k);
+    for( int j=0; j<k; ++j ){ // the first kgram is calcucated naively
+        int lt=0, eq=0;
+        for(int l=j-1; l>=0; l--){ /* counting coding */
+            if(S[l] < S[j]){
+                lt++;
+            }else if(S[l] == S[j]){
+                eq++;
+            }
+        }
+        kgram[j] = c_code(lt, eq);
+    }
+    res[kgram] = 1;
+
+    for(int i=1, end_i=S.size()-k+1; i<end_i; i++){
+        int lt=0, eq=0; // for the new-tail value
+        for(int j=0; j<k-1; j++){
+            if(S[i-1] < S[i+j]){ // utilize the past-head value
+                kgram[j+1].first--;
+            }else if(S[i-1] == S[i+j]){
+                kgram[j+1].second--;
+            }
+            kgram[j] = kgram[j+1];
+
+            if(S[i+j] < S[i+k-1]){ // coding new-tail value, simultaineously
+                lt++;
+            }else if(S[i+j] == S[i+k-1]){
+                eq++;
+            }
+        }
+        kgram[k-1] = c_code(lt, eq); // the new-tail value
+
+        if( res.find(kgram) == res.end() ){ /* regist the kgram */
+            res[kgram] = 1;
+        }else{
+            res[kgram]++;
+        }
+    }
+};
 /* vim:set foldmethod=marker commentstring=//%s : */
