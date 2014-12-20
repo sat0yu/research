@@ -335,8 +335,8 @@ public:
     int rankLessThan_forany(int, int, int) const;
     void rankLessThanEqual(int, int, int, int*, int*) const;
     int rangefreq(int, int, int, int) const;
-    void createRangeCountingKgramVector(vector<int>&, int, rangeCountingKgramVector&);
-    void createRangeCountingKgramVectorWithSliding(vector<int>&, int, rangeCountingKgramVector&);
+    void createCountingCodingKgramVector(vector<int>&, int, countingCodingKgramVector&);
+    void createCountingCodingKgramVectorWithSliding(vector<int>&, int, countingCodingKgramVector&);
 };
 
 void WaveletTree::Node::constructBitVector(){//{{{
@@ -639,12 +639,12 @@ int WaveletTree::rangefreq(int st, int en, int x, int y) const{//{{{
     return rankLessThan(y, st, en) - rankLessThan(x, st, en);
 };//}}}
 
-void WaveletTree::createRangeCountingKgramVector(vector<int>& S, int k, rangeCountingKgramVector& res){//{{{
-    vector<rc_code> kgram(k);
+void WaveletTree::createCountingCodingKgramVector(vector<int>& S, int k, countingCodingKgramVector& res){//{{{
+    vector<c_code> kgram(k);
     for(int i=0, end_i=n-k+1; i<end_i; i++){
         for(int j=0, lt, eq; j<k; ++j){
             rankLessThanEqual(S[i+j], i, i+j, &lt, &eq);
-            kgram[j] = rc_code(lt, eq);
+            kgram[j] = c_code(lt, eq);
         }
 
         if( res.find(kgram) == res.end() ){ /* regist the kgram */
@@ -655,11 +655,11 @@ void WaveletTree::createRangeCountingKgramVector(vector<int>& S, int k, rangeCou
     }
 };//}}}
 
-void WaveletTree::createRangeCountingKgramVectorWithSliding(vector<int>& S, int k, rangeCountingKgramVector& res){//{{{
-    vector<rc_code> kgram(k);
+void WaveletTree::createCountingCodingKgramVectorWithSliding(vector<int>& S, int k, countingCodingKgramVector& res){//{{{
+    vector<c_code> kgram(k);
     for( int j=0, lt, eq; j<k; ++j ){ // the first kgram is calcucated naively
         rankLessThanEqual(S[j], 0, j, &lt, &eq);
-        kgram[j] = rc_code(lt, eq);
+        kgram[j] = c_code(lt, eq);
     }
     res[kgram] = 1;
 
@@ -674,7 +674,7 @@ void WaveletTree::createRangeCountingKgramVectorWithSliding(vector<int>& S, int 
         }
 
         rankLessThanEqual(S[i+k-1], i, i+k-1, &lt, &eq); // the new-tail value is given by WT query
-        kgram[k-1] = rc_code(lt, eq);
+        kgram[k-1] = c_code(lt, eq);
 
         if( res.find(kgram) == res.end() ){ /* regist the kgram */
             res[kgram] = 1;
