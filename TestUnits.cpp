@@ -339,14 +339,14 @@ int comparison_kgram_vector_construct(int length, int range, int k){//{{{
 
             clock_t s_time;
             double wt_construct_duration = 0.,
-                   wt_nat_duration = 0.,
-                   wt_iterate_duration = 0.,
                    wt_sliding_duration = 0.,
                    naive_nat_duration = 0.,
                    naive_iterate_duration = 0.,
                    naive_sliding_duration = 0.,
+                   naive_sliding_wo_oracle_duration = 0.,
+                   scc_iterate_duration = 0.,
+                   scc_sliding_duration = 0.,
                    rc_construct_duration = 0.,
-                   rc_iterate_duration = 0.,
                    rc_sliding_duration = 0.;
 
 
@@ -362,51 +362,52 @@ int comparison_kgram_vector_construct(int length, int range, int k){//{{{
             // </construst an instance>
             rc_construct_duration += (clock() - s_time);
 
-            natRepKgramVector naive_nat_vec, wt_nat_vec;
-            countingCodingKgramVector naive_iterate_rc_vec,
-                                     naive_slide_rc_vec,
-                                     wt_iterate_rc_vec,
-                                     wt_slide_rc_vec,
-                                     rc_iterate_rc_vec,
-                                     rc_slide_rc_vec;
+            natRepKgramVector naive_nat_vec;
+            countingCodingKgramVector naive_iterate_cc_vec,
+                                      naive_slide_cc_vec,
+                                      naive_slide_wo_oracle_cc_vec,
+                                      wt_slide_cc_vec,
+                                      rc_slide_cc_vec;
+            suffixCountingCodingKgramVector scc_iterate_vec,
+                                            scc_slide_vec;
 
             s_time = clock();
             naive_natRepKgramVector(S, k, naive_nat_vec);
             naive_nat_duration += (clock() - s_time);
 
             s_time = clock();
-            naive_countingCodingKgramVector(S, k, naive_iterate_rc_vec);
+            naive_countingCodingKgramVector(S, k, naive_iterate_cc_vec);
             naive_iterate_duration += (clock() - s_time);
 
             s_time = clock();
-            naive_countingCodingKgramVectorWithSliding(S, k, naive_slide_rc_vec);
+            naive_countingCodingKgramVectorWithSliding(S, k, naive_slide_cc_vec);
             naive_sliding_duration += (clock() - s_time);
 
             s_time = clock();
-            wt.createNatRepKgramVector(S, k, wt_nat_vec);
-            wt_nat_duration += (clock() - s_time);
+            kgramVector_CountingCodingAndWindowSlidingWithoutCharacterOracle(S, k, naive_slide_wo_oracle_cc_vec);
+            naive_sliding_wo_oracle_duration += (clock() - s_time);
 
             s_time = clock();
-            wt.createCountingCodingKgramVector(S, k, wt_iterate_rc_vec);
-            wt_iterate_duration += (clock() - s_time);
+            kgramVector_SuffixCountingCoding(S, k, scc_iterate_vec);
+            scc_iterate_duration += (clock() - s_time);
 
             s_time = clock();
-            wt.createCountingCodingKgramVectorWithSliding(S, k, wt_slide_rc_vec);
+            kgramVector_SuffixCountingCodingAndWindowSliding(S, k, scc_slide_vec);
+            scc_sliding_duration += (clock() - s_time);
+
+            s_time = clock();
+            wt.createCountingCodingKgramVectorWithSliding(S, k, wt_slide_cc_vec);
             wt_sliding_duration += (clock() - s_time);
 
             s_time = clock();
-            rc.createCountingCodingKgramVector(S, k, rc_iterate_rc_vec);
-            rc_iterate_duration += (clock() - s_time);
-
-            s_time = clock();
-            rc.createCountingCodingKgramVectorWithSliding(S, k, rc_slide_rc_vec);
+            rc.createCountingCodingKgramVectorWithSliding(S, k, rc_slide_cc_vec);
             rc_sliding_duration += (clock() - s_time);
 
-            if( naive_iterate_rc_vec != wt_iterate_rc_vec ){//{{{
+            if( naive_iterate_cc_vec != naive_slide_cc_vec ){//{{{
                 printf("error: something worse happen.\n");
 
-                countingCodingKgramVector::iterator n_it=naive_iterate_rc_vec.begin(),
-                                                    end_n_id=naive_iterate_rc_vec.end();
+                countingCodingKgramVector::iterator n_it=naive_iterate_cc_vec.begin(),
+                                                    end_n_id=naive_iterate_cc_vec.end();
                 cout << "naive coding" << endl;
                 for(; n_it != end_n_id; n_it++){
                     vector<c_code> kgram = n_it->first;
@@ -417,65 +418,7 @@ int comparison_kgram_vector_construct(int length, int range, int k){//{{{
                     cout << endl;
                 }
 
-                countingCodingKgramVector::iterator w_it=wt_iterate_rc_vec.begin(),
-                                                    end_w_id=wt_iterate_rc_vec.end();
-                cout << "wavelet iteration coding" << endl;
-                for(; w_it != end_w_id; w_it++){
-                    vector<c_code> kgram = w_it->first;
-                    vector<c_code>::iterator it=kgram.begin(), end_it=kgram.end();
-                    for(; it!=end_it; it++){
-                        printf("(%d, %d) ", it->first, it->second);
-                    }
-                    cout << endl;
-                }
-                exit(1);
-            }//}}}
-
-            if( naive_iterate_rc_vec != rc_iterate_rc_vec ){//{{{
-                printf("error: something worse happen.\n");
-
-                countingCodingKgramVector::iterator n_it=naive_iterate_rc_vec.begin(),
-                                                    end_n_id=naive_iterate_rc_vec.end();
-                cout << "naive coding" << endl;
-                for(; n_it != end_n_id; n_it++){
-                    vector<c_code> kgram = n_it->first;
-                    vector<c_code>::iterator it=kgram.begin(), end_it=kgram.end();
-                    for(; it!=end_it; it++){
-                        printf("(%d, %d) ", it->first, it->second);
-                    }
-                    cout << endl;
-                }
-
-                countingCodingKgramVector::iterator w_it=rc_iterate_rc_vec.begin(),
-                                                    end_w_id=rc_iterate_rc_vec.end();
-                cout << "counting iteration coding" << endl;
-                for(; w_it != end_w_id; w_it++){
-                    vector<c_code> kgram = w_it->first;
-                    vector<c_code>::iterator it=kgram.begin(), end_it=kgram.end();
-                    for(; it!=end_it; it++){
-                        printf("(%d, %d) ", it->first, it->second);
-                    }
-                    cout << endl;
-                }
-                exit(1);
-            }//}}}
-
-            if( naive_iterate_rc_vec != naive_slide_rc_vec ){//{{{
-                printf("error: something worse happen.\n");
-
-                countingCodingKgramVector::iterator n_it=naive_iterate_rc_vec.begin(),
-                                                    end_n_id=naive_iterate_rc_vec.end();
-                cout << "naive coding" << endl;
-                for(; n_it != end_n_id; n_it++){
-                    vector<c_code> kgram = n_it->first;
-                    vector<c_code>::iterator it=kgram.begin(), end_it=kgram.end();
-                    for(; it!=end_it; it++){
-                        printf("(%d, %d) ", it->first, it->second);
-                    }
-                    cout << endl;
-                }
-
-                countingCodingKgramVector::iterator w_it=naive_slide_rc_vec.begin(), end_w_id=naive_slide_rc_vec.end();
+                countingCodingKgramVector::iterator w_it=naive_slide_cc_vec.begin(), end_w_id=naive_slide_cc_vec.end();
                 cout << "naive sliding coding" << endl;
                 for(; w_it != end_w_id; w_it++){
                     vector<c_code> kgram = w_it->first;
@@ -488,11 +431,11 @@ int comparison_kgram_vector_construct(int length, int range, int k){//{{{
                 exit(1);
             }//}}}
 
-            if( naive_iterate_rc_vec != wt_slide_rc_vec ){//{{{
+            if( naive_iterate_cc_vec != naive_slide_wo_oracle_cc_vec ){//{{{
                 printf("error: something worse happen.\n");
 
-                countingCodingKgramVector::iterator n_it=naive_iterate_rc_vec.begin(),
-                                                    end_n_id=naive_iterate_rc_vec.end();
+                countingCodingKgramVector::iterator n_it=naive_iterate_cc_vec.begin(),
+                                                    end_n_id=naive_iterate_cc_vec.end();
                 cout << "naive coding" << endl;
                 for(; n_it != end_n_id; n_it++){
                     vector<c_code> kgram = n_it->first;
@@ -503,7 +446,36 @@ int comparison_kgram_vector_construct(int length, int range, int k){//{{{
                     cout << endl;
                 }
 
-                countingCodingKgramVector::iterator w_it=wt_slide_rc_vec.begin(), end_w_id=wt_slide_rc_vec.end();
+                countingCodingKgramVector::iterator w_it=naive_slide_wo_oracle_cc_vec.begin(), \
+                                                 end_w_id=naive_slide_wo_oracle_cc_vec.end();
+                cout << "naive sliding coding without oracle" << endl;
+                for(; w_it != end_w_id; w_it++){
+                    vector<c_code> kgram = w_it->first;
+                    vector<c_code>::iterator it=kgram.begin(), end_it=kgram.end();
+                    for(; it!=end_it; it++){
+                        printf("(%d, %d) ", it->first, it->second);
+                    }
+                    cout << endl;
+                }
+                exit(1);
+            }//}}}
+
+            if( naive_iterate_cc_vec != wt_slide_cc_vec ){//{{{
+                printf("error: something worse happen.\n");
+
+                countingCodingKgramVector::iterator n_it=naive_iterate_cc_vec.begin(),
+                                                    end_n_id=naive_iterate_cc_vec.end();
+                cout << "naive coding" << endl;
+                for(; n_it != end_n_id; n_it++){
+                    vector<c_code> kgram = n_it->first;
+                    vector<c_code>::iterator it=kgram.begin(), end_it=kgram.end();
+                    for(; it!=end_it; it++){
+                        printf("(%d, %d) ", it->first, it->second);
+                    }
+                    cout << endl;
+                }
+
+                countingCodingKgramVector::iterator w_it=wt_slide_cc_vec.begin(), end_w_id=wt_slide_cc_vec.end();
                 cout << "wavelet sliding coding" << endl;
                 for(; w_it != end_w_id; w_it++){
                     vector<c_code> kgram = w_it->first;
@@ -517,11 +489,11 @@ int comparison_kgram_vector_construct(int length, int range, int k){//{{{
             }
 //}}}
 
-            if( naive_iterate_rc_vec != rc_slide_rc_vec ){//{{{
+            if( naive_iterate_cc_vec != rc_slide_cc_vec ){//{{{
                 printf("error: something worse happen.\n");
 
-                countingCodingKgramVector::iterator n_it=naive_iterate_rc_vec.begin(),
-                                                    end_n_id=naive_iterate_rc_vec.end();
+                countingCodingKgramVector::iterator n_it=naive_iterate_cc_vec.begin(),
+                                                    end_n_id=naive_iterate_cc_vec.end();
                 cout << "naive coding" << endl;
                 for(; n_it != end_n_id; n_it++){
                     vector<c_code> kgram = n_it->first;
@@ -532,7 +504,7 @@ int comparison_kgram_vector_construct(int length, int range, int k){//{{{
                     cout << endl;
                 }
 
-                countingCodingKgramVector::iterator w_it=rc_slide_rc_vec.begin(), end_w_id=rc_slide_rc_vec.end();
+                countingCodingKgramVector::iterator w_it=rc_slide_cc_vec.begin(), end_w_id=rc_slide_cc_vec.end();
                 cout << "counting sliding coding" << endl;
                 for(; w_it != end_w_id; w_it++){
                     vector<c_code> kgram = w_it->first;
@@ -546,28 +518,62 @@ int comparison_kgram_vector_construct(int length, int range, int k){//{{{
             }
 //}}}
 
+            if( scc_iterate_vec != scc_slide_vec ){//{{{
+                printf("error: something worse happen.\n");
+
+                suffixCountingCodingKgramVector::iterator
+                    n_it=scc_iterate_vec.begin(),
+                    end_n_id=scc_iterate_vec.end();
+                cout << "iteration coding" << endl;
+                for(; n_it != end_n_id; n_it++){
+                    vector<c_code> kgram = n_it->first;
+                    vector<c_code>::iterator it=kgram.begin(), end_it=kgram.end();
+                    for(; it!=end_it; it++){
+                        printf("(%d, %d) ", it->first, it->second);
+                    }
+                    cout << endl;
+                }
+
+                suffixCountingCodingKgramVector::iterator
+                    w_it=scc_slide_vec.begin(),
+                    end_w_id=scc_slide_vec.end();
+                cout << "sliding coding" << endl;
+                for(; w_it != end_w_id; w_it++){
+                    vector<c_code> kgram = w_it->first;
+                    vector<c_code>::iterator it=kgram.begin(), end_it=kgram.end();
+                    for(; it!=end_it; it++){
+                        printf("(%d, %d) ", it->first, it->second);
+                    }
+                    cout << endl;
+                }
+                exit(1);
+            }//}}}
+
             // </a test for kgram using counting rep.>
             wt_construct_duration /= (double)CLOCKS_PER_SEC;
             rc_construct_duration /= (double)CLOCKS_PER_SEC;
-            wt_nat_duration /= (double)CLOCKS_PER_SEC;
-            wt_iterate_duration /= (double)CLOCKS_PER_SEC;
             wt_sliding_duration /= (double)CLOCKS_PER_SEC;
             naive_nat_duration /= (double)CLOCKS_PER_SEC;
             naive_iterate_duration /= (double)CLOCKS_PER_SEC;
             naive_sliding_duration /= (double)CLOCKS_PER_SEC;
-            rc_iterate_duration /= (double)CLOCKS_PER_SEC;
+            naive_sliding_wo_oracle_duration /= (double)CLOCKS_PER_SEC;
+            scc_iterate_duration /= (double)CLOCKS_PER_SEC;
+            scc_sliding_duration /= (double)CLOCKS_PER_SEC;
             rc_sliding_duration /= (double)CLOCKS_PER_SEC;
             printf("countingCodingKgramVector(S,%d,vec) test: OK\n "
-                    "WT(construction):%.10lf, WT(nat):%.10lf, WT(iterate):%.10lf, WT(slide):%.10lf, "
-                    "naive(nat):%.10lf, naive(iterate):%.10lf, naive(slide):%.10lf, "
-                    "RC(construction):%.10lf, RC(iterate):%.10lf, RC(slide):%.10lf \n",
-                    k, wt_construct_duration, wt_nat_duration, wt_iterate_duration, wt_sliding_duration,
-                    naive_nat_duration, naive_iterate_duration, naive_sliding_duration,
-                    rc_construct_duration, rc_iterate_duration, rc_sliding_duration);
+                    "WT(construction):%.10lf, WT(slide):%.10lf, "
+                    "naive(nat):%.10lf, naive(iterate):%.10lf, naive(slide):%.10lf, naive(slide w/ oracle):%.10lf, "
+                    "scc(iterate):%.10lf, scc(slide):%.10lf, "
+                    "RC(construction):%.10lf, RC(slide):%.10lf \n",
+                    k, wt_construct_duration, wt_sliding_duration,
+                    naive_nat_duration, naive_iterate_duration, naive_sliding_duration, naive_sliding_wo_oracle_duration,
+                    scc_iterate_duration, scc_sliding_duration,
+                    rc_construct_duration, rc_sliding_duration);
             cout << flush;
         }
     }
 
     return 0;
 };//}}}
+
 /* vim:set foldmethod=marker commentstring=//%s : */
