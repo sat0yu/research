@@ -318,8 +318,8 @@ public:
     int queryCase2(int, int);
     int query(int);
     int query(int, int);
-    void createRangeCountingKgramVector(vector<int>&, int, rangeCountingKgramVector&);
-    void createRangeCountingKgramVectorWithSliding(vector<int>&, int, rangeCountingKgramVector&);
+    void createCountingCodingKgramVector(vector<int>&, int, countingCodingKgramVector&);
+    void createCountingCodingKgramVectorWithSliding(vector<int>&, int, countingCodingKgramVector&);
 };
 vector< vector< pair<UINT_WORD, UINT_WORD> > > *RangeCounting::splitingTable = NULL;
 RangeCounting::RangeCounting(const RangeCounting& rhs)://{{{
@@ -756,13 +756,13 @@ int RangeCounting::query(int x, int y){//{{{
     }
     return 0;
 };//}}}
-void RangeCounting::createRangeCountingKgramVector(vector<int>& S, int k, rangeCountingKgramVector& res){//{{{
-    vector<rc_code> kgram(k);
+void RangeCounting::createCountingCodingKgramVector(vector<int>& S, int k, countingCodingKgramVector& res){//{{{
+    vector<c_code> kgram(k);
     for(int i=0, end_i=n-k+1; i<end_i; i++){
         for(int j=0; j<k; ++j){
             int rc_ij_Sij   = query(i+j),
                 rc_i_Sij    = query(i, S[i+j]);
-            kgram[j] = rc_code(
+            kgram[j] = c_code(
                         // RangeCountingQuery( (i+j, S[i+j]), (i, 0) )
                         rc_ij_Sij - rc_i_Sij,
                         // RangeCountingQuery( (i+j, S[i+j]+1), (i, S[i+j]) )
@@ -777,11 +777,11 @@ void RangeCounting::createRangeCountingKgramVector(vector<int>& S, int k, rangeC
         }
     }
 };//}}}
-void RangeCounting::createRangeCountingKgramVectorWithSliding(vector<int>& S, int k, rangeCountingKgramVector& res){//{{{
-    vector<rc_code> kgram(k);
+void RangeCounting::createCountingCodingKgramVectorWithSliding(vector<int>& S, int k, countingCodingKgramVector& res){//{{{
+    vector<c_code> kgram(k);
     for( int j=0, lt, eq; j<k; ++j ){ // the first kgram is calcucated naively
         int rc_ij_Sij = query(j);
-        kgram[j] = rc_code(
+        kgram[j] = c_code(
                     // RangeCountingQuery( (j, S[j]), (0, 0) )
                     rc_ij_Sij,
                     // RangeCountingQuery( (j, S[j]+1), (0, S[j]) )
@@ -802,7 +802,7 @@ void RangeCounting::createRangeCountingKgramVectorWithSliding(vector<int>& S, in
 
         int rc_ij_Sij   = query(i+k-1), // the new-tail value is given by RC query
             rc_i_Sij    = query(i, S[i+k-1]);
-        kgram[k-1] = rc_code(
+        kgram[k-1] = c_code(
                     rc_ij_Sij - rc_i_Sij,
                     query(i+k-1, S[i+k-1]+1) - query(i, S[i+k-1]+1) - rc_ij_Sij + rc_i_Sij
                 );
