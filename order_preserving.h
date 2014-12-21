@@ -1,3 +1,4 @@
+#include<iostream>
 #include<map>
 #include<vector>
 
@@ -9,8 +10,10 @@ using namespace std;
 typedef map< vector<int>, int> natRepKgramVector;
 typedef pair<int, int> c_code;
 typedef pair<int, int> sc_code;
+typedef pair<int, int> sab_code;
 typedef map< vector<c_code>, int> countingCodingKgramVector;
-typedef map< vector<c_code>, int> suffixCountingCodingKgramVector;
+typedef map< vector<sc_code>, int> suffixCountingCodingKgramVector;
+typedef map< vector<sab_code>, int> suffixAplhaBetaCodingKgramVector;
 
 void naive_natRepKgramVector(vector<int>&, int, natRepKgramVector&);
 void naive_countingCodingKgramVector(vector<int>&, int, countingCodingKgramVector&);
@@ -18,6 +21,8 @@ void naive_countingCodingKgramVectorWithSliding(vector<int>&, int, countingCodin
 void kgramVector_SuffixCountingCoding(vector<int>&, int, suffixCountingCodingKgramVector&);
 void kgramVector_SuffixCountingCodingAndWindowSliding(vector<int>&, int, suffixCountingCodingKgramVector&);
 void kgramVector_CountingCodingAndWindowSlidingWithoutCharacterOracle(vector<int>&, int, countingCodingKgramVector&);
+void kgramVector_SuffixAlphaBetaCoding(vector<int>&, int, suffixAplhaBetaCodingKgramVector&);
+void kgramVector_SuffixAlphaBetaCodingWithWindowSliding(vector<int>&, int, suffixAplhaBetaCodingKgramVector&);
 
 void naive_natRepKgramVector(vector<int>& S, int k, natRepKgramVector& res){//{{{
     vector<int> substring(k), kgram(k);
@@ -170,7 +175,7 @@ void kgramVector_SuffixCountingCodingAndWindowSliding(vector<int>& S, int k, suf
     }
 }//}}}
 
-void kgramVector_CountingCodingAndWindowSlidingWithoutCharacterOracle(\
+void kgramVector_CountingCodingAndWindowSlidingWithoutCharacterOracle(//{{{
         vector<int>& S, int k, countingCodingKgramVector& res){
     vector<c_code> kgram(k);
     for( int j=0; j<k; ++j ){ // the first kgram is calcucated naively
@@ -210,5 +215,90 @@ void kgramVector_CountingCodingAndWindowSlidingWithoutCharacterOracle(\
             res[kgram]++;
         }
     }
-};
+};//}}}
+
+void kgramVector_SuffixAlphaBetaCoding(//{{{
+        vector<int>& S, int k, suffixAplhaBetaCodingKgramVector& res){
+    vector<sab_code> kgram(k);
+    for(int i=0, end_i=S.size()-k+1; i<end_i; i++){
+        for(int j=0; j<k; ++j){
+            int lt_pos=k, gt_pos=k, lt=-1, gt=(int)((1U<<31)-1);
+            for(int l=k-1; l>j; l--){ /* suffix alpha-beta coding */
+                if(S[i+l] <= S[i+j] and S[i+l] >= lt){ // alpha
+                    lt_pos = l;
+                    lt = S[i+l];
+                }
+                if(S[i+l] >= S[i+j] and S[i+l] <= gt){ // beta
+                    gt_pos = l;
+                    gt = S[i+l];
+                }
+            }
+            kgram[j] = sab_code(lt_pos - j, gt_pos - j);
+        }
+        kgram[k-1] = sab_code(1, 1);
+
+        if( res.find(kgram) == res.end() ){ /* regist the kgram */
+            res[kgram] = 1;
+        }else{
+            res[kgram]++;
+        }
+    }
+};//}}}
+
+void kgramVector_SuffixAlphaBetaCodingWithWindowSliding(//{{{
+        vector<int>& S, int k, suffixAplhaBetaCodingKgramVector& res){
+    vector<sab_code> kgram(k);
+    for(int j=0; j<k-1; ++j){ // the first kgram is calcucated naively
+        int lt_pos=k, gt_pos=k, lt=-1, gt=(int)((1U<<31)-1);
+        for(int l=k-1; l>j; l--){ /* suffix alpha-beta coding */
+            if(S[l] <= S[j] and S[l] >= lt){ // alpha
+                lt_pos = l;
+                lt = S[l];
+            }
+            if(S[l] >= S[j] and S[l] <= gt){ // beta
+                gt_pos = l;
+                gt = S[l];
+            }
+        }
+        kgram[j] = sab_code(lt_pos - j, gt_pos - j);
+    }
+    kgram[k-1] = sab_code(1, 1);
+    res[kgram] = 1;
+
+    for(int i=1, end_i=S.size()-k+1; i<end_i; i++){
+        for(int j=0, tail_idx=i+k-1; j<k-1; j++){
+            // alpha
+            if(kgram[j+1].first == k-(j+1)){ // if alpha is it own index
+               if(S[tail_idx] <= S[i+j]){
+                   kgram[j+1].first = k-j-1;
+               }else{
+                   kgram[j+1].first = k-j; // update to refer to it own
+               }
+            }else if(S[tail_idx] <= S[i+j] and S[tail_idx] > S[(i+j)+kgram[j+1].first]){
+                kgram[j+1].first = k-j-1;
+            }
+
+            // beta
+            if(kgram[j+1].second == k-(j+1)){ // if beta is it own index
+               if(S[tail_idx] >= S[i+j]){
+                   kgram[j+1].second = k-j-1;
+               }else{
+                   kgram[j+1].second = k-j; // update to refer to it own
+               }
+            }else if(S[tail_idx] >= S[i+j] and S[tail_idx] < S[(i+j)+kgram[j+1].second]){
+                kgram[j+1].second = k-j-1;
+            }
+
+            kgram[j] = kgram[j+1]; // update
+        }
+        kgram[k-1] = sab_code(1, 1); // the new-tail value
+
+        if( res.find(kgram) == res.end() ){ /* regist the kgram */
+            res[kgram] = 1;
+        }else{
+            res[kgram]++;
+        }
+    }
+};//}}}
+
 /* vim:set foldmethod=marker commentstring=//%s : */

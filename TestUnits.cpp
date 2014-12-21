@@ -25,6 +25,7 @@ int test_for_wavelettree(int, int, int);
 int test_for_rangecounting(int);
 int comparison_kgram_vector_construct(int, int, int);
 int test_for_SuffixCountingCoding(int);
+int test_for_SuffixAlphaBetaCoding(int);
 
 int main(){
     srand(time(0));
@@ -37,6 +38,8 @@ int main(){
     test_for_rangecounting(rc_textsize);
     int scc_textsize = 2000;
     test_for_SuffixCountingCoding(scc_textsize);
+    int sab_textsize = 2000;
+    test_for_SuffixAlphaBetaCoding(sab_textsize);
 
     int textsize = 1000, range = 1000, max_k = 100;
     comparison_kgram_vector_construct(textsize, range, max_k);
@@ -319,6 +322,73 @@ int test_for_SuffixCountingCoding(int length){//{{{
             iterate_duration /= (double)CLOCKS_PER_SEC;
             slide_duration /= (double)CLOCKS_PER_SEC;
             printf("suffixCountingCodingKgramVector(S,%d,vec) test: OK\n "
+                    "iterate:%.10lf, slide:%.10lf\n", k, iterate_duration, slide_duration);
+            cout << flush;
+        }
+    }
+    return 0;
+};//}}}
+
+int test_for_SuffixAlphaBetaCoding(int length){//{{{
+    for(int i=1; i<length; i<<=1){
+        for(int k=1; k<i; k<<=1){
+            vector<int> S(i);
+            for(int j=0; j<i; j++){ S[j] = rand(); }
+            printf("|T|=%d, k=%d\n", i, k);
+
+            clock_t s_time;
+            double iterate_duration = 0.,
+                   slide_duration = 0.;
+
+            suffixAplhaBetaCodingKgramVector iterate_sab_vec, slide_sab_vec;
+
+            s_time = clock();
+            kgramVector_SuffixAlphaBetaCoding(S, k, iterate_sab_vec);
+            iterate_duration += (clock() - s_time);
+
+            s_time = clock();
+            kgramVector_SuffixAlphaBetaCodingWithWindowSliding(S, k, slide_sab_vec);
+            slide_duration += (clock() - s_time);
+
+            if( iterate_sab_vec != slide_sab_vec ){//{{{
+                printf("error: something worse happen.\n");
+                for(int i=0; i<S.size(); i++){
+                    cout << S[i] << " ";
+                }
+                cout << endl;
+
+                suffixCountingCodingKgramVector::iterator
+                    n_it=iterate_sab_vec.begin(),
+                    end_n_id=iterate_sab_vec.end();
+                cout << "iteration coding" << endl;
+                for(; n_it != end_n_id; n_it++){
+                    vector<sab_code> kgram = n_it->first;
+                    vector<sab_code>::iterator it=kgram.begin(), end_it=kgram.end();
+                    for(; it!=end_it; it++){
+                        printf("(%d, %d) ", it->first, it->second);
+                    }
+                    printf("\t%d\n", n_it->second);
+                }
+
+                suffixCountingCodingKgramVector::iterator
+                    w_it=slide_sab_vec.begin(),
+                    end_w_id=slide_sab_vec.end();
+                cout << "sliding coding" << endl;
+                for(; w_it != end_w_id; w_it++){
+                    vector<sab_code> kgram = w_it->first;
+                    vector<sab_code>::iterator it=kgram.begin(), end_it=kgram.end();
+                    for(; it!=end_it; it++){
+                        printf("(%d, %d) ", it->first, it->second);
+                    }
+                    printf("\t%d\n", w_it->second);
+                }
+                exit(1);
+            }//}}}
+
+            // </a test for kgram using suffix alpha-beta rep.>
+            iterate_duration /= (double)CLOCKS_PER_SEC;
+            slide_duration /= (double)CLOCKS_PER_SEC;
+            printf("suffixAlphaBetaCodingKgramVector(S,%d,vec) test: OK\n "
                     "iterate:%.10lf, slide:%.10lf\n", k, iterate_duration, slide_duration);
             cout << flush;
         }
