@@ -24,6 +24,7 @@ int test_for_bitvector(int);
 int test_for_wavelettree(int, int, int);
 int test_for_rangecounting(int);
 int comparison_kgram_vector_construct(int, int, int);
+int test_for_NaturalRepresentationCoding(int);
 int test_for_SuffixCountingCoding(int);
 int test_for_SuffixAlphaBetaCoding(int);
 
@@ -36,6 +37,8 @@ int main(){
     test_for_wavelettree(wt_textsize, wt_alphabetsize, k);
     int rc_textsize = 1000;
     test_for_rangecounting(rc_textsize);
+    int nat_textsize = 2000;
+    test_for_NaturalRepresentationCoding(nat_textsize);
     int scc_textsize = 2000;
     test_for_SuffixCountingCoding(scc_textsize);
     int sab_textsize = 2000;
@@ -262,6 +265,69 @@ int test_for_rangecounting(int length){//{{{
         // </a test for rangecounting>
         query_duration = (double)(query_duration) / (double)CLOCKS_PER_SEC;
         printf("RC.query test: OK\t %.10lf [s]\n", query_duration / i);
+    }
+    return 0;
+};//}}}
+
+int test_for_NaturalRepresentationCoding(int length){//{{{
+    for(int i=1; i<length; i<<=1){
+        for(int k=1; k<i; k<<=1){
+            vector<int> S(i);
+            for(int j=0; j<i; j++){ S[j] = rand(); }
+            printf("|T|=%d, k=%d\n", i, k);
+
+            clock_t s_time;
+            double iterate_duration = 0.,
+                   slide_duration = 0.;
+
+            natRepKgramVector iterate_nat_vec, slide_nat_vec;
+
+            s_time = clock();
+            naive_natRepKgramVector(S, k, iterate_nat_vec);
+            iterate_duration += (clock() - s_time);
+
+            s_time = clock();
+            kgramVector_NaturalRepresentationAndWindowSliding(S, k, slide_nat_vec);
+            slide_duration += (clock() - s_time);
+
+            if( iterate_nat_vec != slide_nat_vec ){//{{{
+                printf("error: something worse happen.\n");
+
+                natRepKgramVector::iterator
+                    n_it=iterate_nat_vec.begin(),
+                    end_n_id=iterate_nat_vec.end();
+                cout << "iteration coding" << endl;
+                for(; n_it != end_n_id; n_it++){
+                    vector<int> kgram = n_it->first;
+                    vector<int>::iterator it=kgram.begin(), end_it=kgram.end();
+                    for(; it!=end_it; it++){
+                        printf("%d ", *it);
+                    }
+                    cout << endl;
+                }
+
+                natRepKgramVector::iterator
+                    w_it=slide_nat_vec.begin(),
+                    end_w_id=slide_nat_vec.end();
+                cout << "sliding coding" << endl;
+                for(; w_it != end_w_id; w_it++){
+                    vector<int> kgram = w_it->first;
+                    vector<int>::iterator it=kgram.begin(), end_it=kgram.end();
+                    for(; it!=end_it; it++){
+                        printf("%d ", *it);
+                    }
+                    cout << endl;
+                }
+                exit(1);
+            }//}}}
+
+            // </a test for kgram using natural rep.>
+            iterate_duration /= (double)CLOCKS_PER_SEC;
+            slide_duration /= (double)CLOCKS_PER_SEC;
+            printf("natRepKgramVector(S,%d,vec) test: OK\n "
+                    "iterate:%.10lf, slide:%.10lf\n", k, iterate_duration, slide_duration);
+            cout << flush;
+        }
     }
     return 0;
 };//}}}

@@ -18,6 +18,7 @@ typedef map< vector<sab_code>, int> suffixAplhaBetaCodingKgramVector;
 void naive_natRepKgramVector(vector<int>&, int, natRepKgramVector&);
 void naive_countingCodingKgramVector(vector<int>&, int, countingCodingKgramVector&);
 void naive_countingCodingKgramVectorWithSliding(vector<int>&, int, countingCodingKgramVector&);
+void kgramVector_NaturalRepresentationAndWindowSliding(vector<int>&, int, natRepKgramVector&);
 void kgramVector_SuffixCountingCoding(vector<int>&, int, suffixCountingCodingKgramVector&);
 void kgramVector_SuffixCountingCodingAndWindowSliding(vector<int>&, int, suffixCountingCodingKgramVector&);
 void kgramVector_CountingCodingAndWindowSlidingWithoutCharacterOracle(vector<int>&, int, countingCodingKgramVector&);
@@ -116,6 +117,45 @@ void naive_countingCodingKgramVectorWithSliding(vector<int>& S, int k, countingC
         }
     }
 }//}}}
+
+void kgramVector_NaturalRepresentationAndWindowSliding(vector<int>& S, int k, natRepKgramVector& res){//{{{
+    vector<int> substring(k), kgram(k);
+    for(int j=0; j<k; j++){ substring[j] = S[j]; } /* slice substring */
+    stable_sort(substring.begin(), substring.end()); /* merge sort */
+    map<int, int> hash;
+    for(int j=0; j<k; j++){
+        hash[ substring[j] ] = j+1; /* hashing val -> order */
+    }
+    for(int j=0; j<k; j++){
+        kgram[j] = hash[ S[j] ]; /* create an encoded kgram */
+    }
+    res[kgram] = 1;
+
+    for(int i=1, end_i=S.size()-k+1; i<end_i; i++){
+        int rank=1; // for the new-tail value
+        for(int j=0; j<k-1; j++){
+            kgram[j] = kgram[j+1];
+            if(S[i-1] > S[i+j] and S[i+j] >= S[i+k-1]){ // utilize the past-head value
+                kgram[j]++;
+            }else if(S[i-1] < S[i+j] and S[i+j] < S[i+k-1]){
+                kgram[j]--;
+            }else if(S[i-1] == S[i+j] and S[i+j] < S[i+k-1]){
+                kgram[j]--;
+            }
+
+            if(S[i+j] <= S[i+k-1]){ // coding new-tail value, simultaineously
+                rank++;
+            }
+        }
+        kgram[k-1] = rank; // the new-tail value
+
+        if( res.find(kgram) == res.end() ){ /* regist the kgram */
+            res[kgram] = 1;
+        }else{
+            res[kgram]++;
+        }
+    }
+};//}}}
 
 void kgramVector_SuffixCountingCoding(vector<int>& S, int k, suffixCountingCodingKgramVector& res){//{{{
     vector<sc_code> kgram(k);
