@@ -3,12 +3,8 @@
 #include "./order_preserving.h"
 #endif
 
-#include<iostream>
 #include<fstream>
 #include<string>
-#include<vector>
-#include<map>
-#include<algorithm>
 #include<stdlib.h>
 #include<string.h>
 #include<math.h>
