@@ -49,7 +49,7 @@ int main(){
     comparison_kgram_vector_construct(
             length_list, length_list_size,
             sigma_list, sigma_list_size,
-            k_list, k_list_size, 100);
+            k_list, k_list_size, 1000);
 }
 
 void naive_natRepKgramVector(vector<int>& S, int k, natRepKgramVector& res){//{{{
@@ -229,7 +229,7 @@ int comparison_kgram_vector_construct(//{{{
                     }
                 }
                 wt_construct_duration /= (double)CLOCKS_PER_SEC * loop;
-                rc_construct_duration /= (double)CLOCKS_PER_SEC;
+                rc_construct_duration /= (double)CLOCKS_PER_SEC * loop;
                 wt_nat_duration /= (double)CLOCKS_PER_SEC * loop;
                 wt_iterate_duration /= (double)CLOCKS_PER_SEC * loop;
                 wt_sliding_duration /= (double)CLOCKS_PER_SEC * loop;
