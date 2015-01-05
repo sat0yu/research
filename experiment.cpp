@@ -27,7 +27,7 @@ int comparison_kgram_vector_construct(const int*, int, const int*, int, const in
 int main(){
     srand(0);
     const int length_list[] = {100000};
-    const int sigma_list[] = {100,1000,10000};
+    const int sigma_list[] = {1000};
     const int k_list[] = {\
         2,3,4,5,6,7,8,9,\
         10,20,30,40,50,60,70,80,90,\
@@ -42,7 +42,7 @@ int main(){
     comparison_kgram_vector_construct(
             length_list, length_list_size,
             sigma_list, sigma_list_size,
-            k_list, k_list_size, 100);
+            k_list, k_list_size, 1000);
 }
 
 void naive_natRepKgramVector(vector<int>& S, int k, natRepKgramVector& res){//{{{
