@@ -1,0 +1,265 @@
+# -----  T1000S100 -----
+unset logscale x
+unset logscale y
+set terminal postscript eps enhanced color
+set output "algorithms_T1000S100.eps"
+set size 0.6, 0.6
+#set yrange[0.001:10]
+set xrange[2:1000]
+set logscale x
+set logscale y
+set key left top
+set xl "n"
+set yl "time (sec)" offset 3,0
+plot "T1000S100.tsv" using 3:10 title "natural rep.(Alg.1)" with line linetype 4 linewidth 3 linecolor "blue", "T1000S100.tsv" using 3:12 title "counting coding(Alg.2)" with line linetype 5 linewidth 3 linecolor "red", "T1000S100.tsv" using 3:6 title "counting coding with WT(Alg.2)" with line linetype 5 linewidth 3 linecolor rgb "orange", "T1000S100.tsv" using 3:11 title "natural rep.(proposal)" with line linetype 1 linewidth 3 linecolor rgb "blue", "T1000S100.tsv" using 3:13 title "counting coding(proposal)" with line linetype 1 linewidth 3 linecolor rgb "red"
+set output 
+set terminal unknown
+
+unset logscale x
+unset logscale y
+set terminal postscript eps enhanced color
+set output "representation_T1000S100.eps"
+set size 0.6, 0.6
+#set yrange[0.001:10]
+set xrange[2:1000]
+set logscale x
+#set logscale y
+set key left top
+set xl "n"
+set yl "time (sec)" offset 3,0
+plot "T1000S100.tsv" using 3:11 title "natural rep." with line linetype 1 linewidth 3 linecolor rgb "blue", "T1000S100.tsv" using 3:13 title "counting coding" with line linetype 1 linewidth 3 linecolor rgb "red", "T1000S100.tsv" using 3:14 title "suffix counting coding" with line linetype 1 linewidth 3 linecolor rgb "magenta", "T1000S100.tsv" using 3:15 title "suffix ab coding" with line linetype 1 linewidth 3 linecolor rgb "green"
+set output 
+set terminal unknown
+
+# -----  T1000S1000 -----
+unset logscale x
+unset logscale y
+set terminal postscript eps enhanced color
+set output "algorithms_T1000S1000.eps"
+set size 0.6, 0.6
+#set yrange[0.001:10]
+set xrange[2:1000]
+set logscale x
+set logscale y
+set key left top
+set xl "n"
+set yl "time (sec)" offset 3,0
+plot "T1000S1000.tsv" using 3:10 title "natural rep.(Alg.1)" with line linetype 4 linewidth 3 linecolor "blue", "T1000S1000.tsv" using 3:12 title "counting coding(Alg.2)" with line linetype 5 linewidth 3 linecolor "red", "T1000S1000.tsv" using 3:6 title "counting coding with WT(Alg.2)" with line linetype 5 linewidth 3 linecolor rgb "orange", "T1000S1000.tsv" using 3:11 title "natural rep.(proposal)" with line linetype 1 linewidth 3 linecolor rgb "blue", "T1000S1000.tsv" using 3:13 title "counting coding(proposal)" with line linetype 1 linewidth 3 linecolor rgb "red"
+set output 
+set terminal unknown
+
+unset logscale x
+unset logscale y
+set terminal postscript eps enhanced color
+set output "representation_T1000S1000.eps"
+set size 0.6, 0.6
+#set yrange[0.001:10]
+set xrange[2:1000]
+set logscale x
+#set logscale y
+set key left top
+set xl "n"
+set yl "time (sec)" offset 3,0
+plot "T1000S1000.tsv" using 3:11 title "natural rep." with line linetype 1 linewidth 3 linecolor rgb "blue", "T1000S1000.tsv" using 3:13 title "counting coding" with line linetype 1 linewidth 3 linecolor rgb "red", "T1000S1000.tsv" using 3:14 title "suffix counting coding" with line linetype 1 linewidth 3 linecolor rgb "magenta", "T1000S1000.tsv" using 3:15 title "suffix ab coding" with line linetype 1 linewidth 3 linecolor rgb "green"
+set output 
+set terminal unknown
+
+
+# -----  T10000S100 -----
+unset logscale x
+unset logscale y
+set terminal postscript eps enhanced color
+set output "algorithms_T10000S100.eps"
+set size 0.6, 0.6
+#set yrange[0.001:10]
+set xrange[2:1000]
+set logscale x
+set logscale y
+set key left top
+set xl "n"
+set yl "time (sec)" offset 3,0
+plot "T10000S100.tsv" using 3:10 title "natural rep.(Alg.1)" with line linetype 4 linewidth 3 linecolor "blue", "T10000S100.tsv" using 3:12 title "counting coding(Alg.2)" with line linetype 5 linewidth 3 linecolor "red", "T10000S100.tsv" using 3:6 title "counting coding with WT(Alg.2)" with line linetype 5 linewidth 3 linecolor rgb "orange", "T10000S100.tsv" using 3:11 title "natural rep.(proposal)" with line linetype 1 linewidth 3 linecolor rgb "blue", "T10000S100.tsv" using 3:13 title "counting coding(proposal)" with line linetype 1 linewidth 3 linecolor rgb "red"
+set output 
+set terminal unknown
+
+unset logscale x
+unset logscale y
+set terminal postscript eps enhanced color
+set output "representation_T10000S100.eps"
+set size 0.6, 0.6
+#set yrange[0.001:10]
+set xrange[2:1000]
+set logscale x
+#set logscale y
+set key left top
+set xl "n"
+set yl "time (sec)" offset 3,0
+plot "T10000S100.tsv" using 3:11 title "natural rep." with line linetype 1 linewidth 3 linecolor rgb "blue", "T10000S100.tsv" using 3:13 title "counting coding" with line linetype 1 linewidth 3 linecolor rgb "red", "T10000S100.tsv" using 3:14 title "suffix counting coding" with line linetype 1 linewidth 3 linecolor rgb "magenta", "T10000S100.tsv" using 3:15 title "suffix ab coding" with line linetype 1 linewidth 3 linecolor rgb "green"
+set output 
+set terminal unknown
+
+# -----  T10000S1000 -----
+unset logscale x
+unset logscale y
+set terminal postscript eps enhanced color
+set output "algorithms_T10000S1000.eps"
+set size 0.6, 0.6
+#set yrange[0.001:10]
+set xrange[2:1000]
+set logscale x
+set logscale y
+set key left top
+set xl "n"
+set yl "time (sec)" offset 3,0
+plot "T10000S1000.tsv" using 3:10 title "natural rep.(Alg.1)" with line linetype 4 linewidth 3 linecolor "blue", "T10000S1000.tsv" using 3:12 title "counting coding(Alg.2)" with line linetype 5 linewidth 3 linecolor "red", "T10000S1000.tsv" using 3:6 title "counting coding with WT(Alg.2)" with line linetype 5 linewidth 3 linecolor rgb "orange", "T10000S1000.tsv" using 3:11 title "natural rep.(proposal)" with line linetype 1 linewidth 3 linecolor rgb "blue", "T10000S1000.tsv" using 3:13 title "counting coding(proposal)" with line linetype 1 linewidth 3 linecolor rgb "red"
+set output 
+set terminal unknown
+
+unset logscale x
+unset logscale y
+set terminal postscript eps enhanced color
+set output "representation_T10000S1000.eps"
+set size 0.6, 0.6
+#set yrange[0.001:10]
+set xrange[2:1000]
+set logscale x
+#set logscale y
+set key left top
+set xl "n"
+set yl "time (sec)" offset 3,0
+plot "T10000S1000.tsv" using 3:11 title "natural rep." with line linetype 1 linewidth 3 linecolor rgb "blue", "T10000S1000.tsv" using 3:13 title "counting coding" with line linetype 1 linewidth 3 linecolor rgb "red", "T10000S1000.tsv" using 3:14 title "suffix counting coding" with line linetype 1 linewidth 3 linecolor rgb "magenta", "T10000S1000.tsv" using 3:15 title "suffix ab coding" with line linetype 1 linewidth 3 linecolor rgb "green"
+set output 
+set terminal unknown
+
+# -----  T10000S10000 -----
+unset logscale x
+unset logscale y
+set terminal postscript eps enhanced color
+set output "algorithms_T10000S10000.eps"
+set size 0.6, 0.6
+#set yrange[0.001:10]
+set xrange[2:1000]
+set logscale x
+set logscale y
+set key left top
+set xl "n"
+set yl "time (sec)" offset 3,0
+plot "T10000S10000.tsv" using 3:10 title "natural rep.(Alg.1)" with line linetype 4 linewidth 3 linecolor "blue", "T10000S10000.tsv" using 3:12 title "counting coding(Alg.2)" with line linetype 5 linewidth 3 linecolor "red", "T10000S10000.tsv" using 3:6 title "counting coding with WT(Alg.2)" with line linetype 5 linewidth 3 linecolor rgb "orange", "T10000S10000.tsv" using 3:11 title "natural rep.(proposal)" with line linetype 1 linewidth 3 linecolor rgb "blue", "T10000S10000.tsv" using 3:13 title "counting coding(proposal)" with line linetype 1 linewidth 3 linecolor rgb "red"
+set output 
+set terminal unknown
+
+unset logscale x
+unset logscale y
+set terminal postscript eps enhanced color
+set output "representation_T10000S10000.eps"
+set size 0.6, 0.6
+#set yrange[0.001:10]
+set xrange[2:1000]
+set logscale x
+#set logscale y
+set key left top
+set xl "n"
+set yl "time (sec)" offset 3,0
+plot "T10000S10000.tsv" using 3:11 title "natural rep." with line linetype 1 linewidth 3 linecolor rgb "blue", "T10000S10000.tsv" using 3:13 title "counting coding" with line linetype 1 linewidth 3 linecolor rgb "red", "T10000S10000.tsv" using 3:14 title "suffix counting coding" with line linetype 1 linewidth 3 linecolor rgb "magenta", "T10000S10000.tsv" using 3:15 title "suffix ab coding" with line linetype 1 linewidth 3 linecolor rgb "green"
+set output 
+set terminal unknown
+
+
+# -----  T100000S100 -----
+unset logscale x
+unset logscale y
+set terminal postscript eps enhanced color
+set output "algorithms_T100000S100.eps"
+set size 0.6, 0.6
+#set yrange[0.001:10]
+set xrange[2:1000]
+set logscale x
+set logscale y
+set key left top
+set xl "n"
+set yl "time (sec)" offset 3,0
+plot "T100000S100.tsv" using 3:10 title "natural rep.(Alg.1)" with line linetype 4 linewidth 3 linecolor "blue", "T100000S100.tsv" using 3:12 title "counting coding(Alg.2)" with line linetype 5 linewidth 3 linecolor "red", "T100000S100.tsv" using 3:6 title "counting coding with WT(Alg.2)" with line linetype 5 linewidth 3 linecolor rgb "orange", "T100000S100.tsv" using 3:11 title "natural rep.(proposal)" with line linetype 1 linewidth 3 linecolor rgb "blue", "T100000S100.tsv" using 3:13 title "counting coding(proposal)" with line linetype 1 linewidth 3 linecolor rgb "red"
+set output 
+set terminal unknown
+
+unset logscale x
+unset logscale y
+set terminal postscript eps enhanced color
+set output "representation_T100000S100.eps"
+set size 0.6, 0.6
+#set yrange[0.001:10]
+set xrange[2:1000]
+set logscale x
+#set logscale y
+set key left top
+set xl "n"
+set yl "time (sec)" offset 3,0
+plot "T100000S100.tsv" using 3:11 title "natural rep." with line linetype 1 linewidth 3 linecolor rgb "blue", "T100000S100.tsv" using 3:13 title "counting coding" with line linetype 1 linewidth 3 linecolor rgb "red", "T100000S100.tsv" using 3:14 title "suffix counting coding" with line linetype 1 linewidth 3 linecolor rgb "magenta", "T100000S100.tsv" using 3:15 title "suffix ab coding" with line linetype 1 linewidth 3 linecolor rgb "green"
+set output 
+set terminal unknown
+
+# -----  T100000S1000 -----
+unset logscale x
+unset logscale y
+set terminal postscript eps enhanced color
+set output "algorithms_T100000S1000.eps"
+set size 0.6, 0.6
+#set yrange[0.001:10]
+set xrange[2:1000]
+set logscale x
+set logscale y
+set key left top
+set xl "n"
+set yl "time (sec)" offset 3,0
+plot "T100000S1000.tsv" using 3:10 title "natural rep.(Alg.1)" with line linetype 4 linewidth 3 linecolor "blue", "T100000S1000.tsv" using 3:12 title "counting coding(Alg.2)" with line linetype 5 linewidth 3 linecolor "red", "T100000S1000.tsv" using 3:6 title "counting coding with WT(Alg.2)" with line linetype 5 linewidth 3 linecolor rgb "orange", "T100000S1000.tsv" using 3:11 title "natural rep.(proposal)" with line linetype 1 linewidth 3 linecolor rgb "blue", "T100000S1000.tsv" using 3:13 title "counting coding(proposal)" with line linetype 1 linewidth 3 linecolor rgb "red"
+set output 
+set terminal unknown
+
+unset logscale x
+unset logscale y
+set terminal postscript eps enhanced color
+set output "representation_T100000S1000.eps"
+set size 0.6, 0.6
+#set yrange[0.001:10]
+set xrange[2:1000]
+set logscale x
+#set logscale y
+set key left top
+set xl "n"
+set yl "time (sec)" offset 3,0
+plot "T100000S1000.tsv" using 3:11 title "natural rep." with line linetype 1 linewidth 3 linecolor rgb "blue", "T100000S1000.tsv" using 3:13 title "counting coding" with line linetype 1 linewidth 3 linecolor rgb "red", "T100000S1000.tsv" using 3:14 title "suffix counting coding" with line linetype 1 linewidth 3 linecolor rgb "magenta", "T100000S1000.tsv" using 3:15 title "suffix ab coding" with line linetype 1 linewidth 3 linecolor rgb "green"
+set output 
+set terminal unknown
+
+# -----  T100000S10000 -----
+unset logscale x
+unset logscale y
+set terminal postscript eps enhanced color
+set output "algorithms_T100000S10000.eps"
+set size 0.6, 0.6
+#set yrange[0.001:10]
+set xrange[2:1000]
+set logscale x
+set logscale y
+set key left top
+set xl "n"
+set yl "time (sec)" offset 3,0
+plot "T100000S10000.tsv" using 3:10 title "natural rep.(Alg.1)" with line linetype 4 linewidth 3 linecolor "blue", "T100000S10000.tsv" using 3:12 title "counting coding(Alg.2)" with line linetype 5 linewidth 3 linecolor "red", "T100000S10000.tsv" using 3:6 title "counting coding with WT(Alg.2)" with line linetype 5 linewidth 3 linecolor rgb "orange", "T100000S10000.tsv" using 3:11 title "natural rep.(proposal)" with line linetype 1 linewidth 3 linecolor rgb "blue", "T100000S10000.tsv" using 3:13 title "counting coding(proposal)" with line linetype 1 linewidth 3 linecolor rgb "red"
+set output 
+set terminal unknown
+
+unset logscale x
+unset logscale y
+set terminal postscript eps enhanced color
+set output "representation_T100000S10000.eps"
+set size 0.6, 0.6
+#set yrange[0.001:10]
+set xrange[2:1000]
+set logscale x
+#set logscale y
+set key left top
+set xl "n"
+set yl "time (sec)" offset 3,0
+plot "T100000S10000.tsv" using 3:11 title "natural rep." with line linetype 1 linewidth 3 linecolor rgb "blue", "T100000S10000.tsv" using 3:13 title "counting coding" with line linetype 1 linewidth 3 linecolor rgb "red", "T100000S10000.tsv" using 3:14 title "suffix counting coding" with line linetype 1 linewidth 3 linecolor rgb "magenta", "T100000S10000.tsv" using 3:15 title "suffix ab coding" with line linetype 1 linewidth 3 linecolor rgb "green"
+set output 
+set terminal unknown
