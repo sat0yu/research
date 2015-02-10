@@ -336,7 +336,7 @@ public:
     void rankLessThanEqual(int, int, int, int*, int*) const;
     int rangefreq(int, int, int, int) const;
     void createCountingCodingKgramVector(vector<int>&, int, countingCodingKgramVector&);
-    void createCountingCodingKgramVectorWithSliding(vector<int>&, int, countingCodingKgramVector&);
+    double createCountingCodingKgramVectorWithSliding(vector<int>&, int, countingCodingKgramVector&);
 };
 
 void WaveletTree::Node::constructBitVector(){//{{{
@@ -655,7 +655,10 @@ void WaveletTree::createCountingCodingKgramVector(vector<int>& S, int k, countin
     }
 };//}}}
 
-void WaveletTree::createCountingCodingKgramVectorWithSliding(vector<int>& S, int k, countingCodingKgramVector& res){//{{{
+double WaveletTree::createCountingCodingKgramVectorWithSliding(vector<int>& S, int k, countingCodingKgramVector& res){//{{{
+    double insertion_duration = 0.;
+    clock_t s_time;
+
     vector<c_code> kgram(k);
     for( int j=0, lt, eq; j<k; ++j ){ // the first kgram is calcucated naively
         rankLessThanEqual(S[j], 0, j, &lt, &eq);
@@ -676,12 +679,16 @@ void WaveletTree::createCountingCodingKgramVectorWithSliding(vector<int>& S, int
         rankLessThanEqual(S[i+k-1], i, i+k-1, &lt, &eq); // the new-tail value is given by WT query
         kgram[k-1] = c_code(lt, eq);
 
+        s_time = clock();
         if( res.find(kgram) == res.end() ){ /* regist the kgram */
             res[kgram] = 1;
         }else{
             res[kgram]++;
         }
+        insertion_duration += (clock() - s_time);
     }
+
+    return insertion_duration;
 };//}}}
 
 /* vim:set foldmethod=marker commentstring=//%s : */

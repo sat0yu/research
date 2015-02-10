@@ -2,6 +2,7 @@
 #include<map>
 #include<vector>
 #include<algorithm>
+#include<ctime>
 
 using namespace std;
 
@@ -16,17 +17,20 @@ typedef map< vector<c_code>, int> countingCodingKgramVector;
 typedef map< vector<sc_code>, int> suffixCountingCodingKgramVector;
 typedef map< vector<sab_code>, int> suffixAplhaBetaCodingKgramVector;
 
-void naive_natRepKgramVector(vector<int>&, int, natRepKgramVector&);
+double naive_natRepKgramVector(vector<int>&, int, natRepKgramVector&);
 void naive_countingCodingKgramVector(vector<int>&, int, countingCodingKgramVector&);
-void naive_countingCodingKgramVectorWithSliding(vector<int>&, int, countingCodingKgramVector&);
-void kgramVector_NaturalRepresentationAndWindowSliding(vector<int>&, int, natRepKgramVector&);
+double naive_countingCodingKgramVectorWithSliding(vector<int>&, int, countingCodingKgramVector&);
+double kgramVector_NaturalRepresentationAndWindowSliding(vector<int>&, int, natRepKgramVector&);
 void kgramVector_SuffixCountingCoding(vector<int>&, int, suffixCountingCodingKgramVector&);
-void kgramVector_SuffixCountingCodingAndWindowSliding(vector<int>&, int, suffixCountingCodingKgramVector&);
+double kgramVector_SuffixCountingCodingAndWindowSliding(vector<int>&, int, suffixCountingCodingKgramVector&);
 void kgramVector_CountingCodingAndWindowSlidingWithoutCharacterOracle(vector<int>&, int, countingCodingKgramVector&);
 void kgramVector_SuffixAlphaBetaCoding(vector<int>&, int, suffixAplhaBetaCodingKgramVector&);
 void kgramVector_SuffixAlphaBetaCodingWithWindowSliding(vector<int>&, int, suffixAplhaBetaCodingKgramVector&);
 
-void naive_natRepKgramVector(vector<int>& S, int k, natRepKgramVector& res){//{{{
+double naive_natRepKgramVector(vector<int>& S, int k, natRepKgramVector& res){//{{{
+    double insertion_duration = 0.;
+    clock_t s_time;
+
     vector<int> substring(k), kgram(k);
     map<int, int> hash;
     for(int i=0, end_i=S.size()-k+1; i<end_i; i++){
@@ -45,12 +49,17 @@ void naive_natRepKgramVector(vector<int>& S, int k, natRepKgramVector& res){//{{
             kgram[j] = hash[ S[i+j] ]; /* create an encoded kgram */
         }
 
+        s_time = clock();
         if( res.find(kgram) == res.end() ){ /* regist the kgram */
             res[kgram] = 1;
         }else{
             res[kgram]++;
         }
+        insertion_duration += (clock() - s_time);
+
     }
+
+    return insertion_duration;
 }//}}}
 
 void naive_countingCodingKgramVector(vector<int>& S, int k, countingCodingKgramVector& res){//{{{
@@ -76,7 +85,10 @@ void naive_countingCodingKgramVector(vector<int>& S, int k, countingCodingKgramV
     }
 }//}}}
 
-void naive_countingCodingKgramVectorWithSliding(vector<int>& S, int k, countingCodingKgramVector& res){//{{{
+double naive_countingCodingKgramVectorWithSliding(vector<int>& S, int k, countingCodingKgramVector& res){//{{{
+    double insertion_duration = 0.;
+    clock_t s_time;
+
     vector<c_code> kgram(k);
     for( int j=0; j<k; ++j ){ // the first kgram is calcucated naively
         int lt=0, eq=0;
@@ -111,15 +123,23 @@ void naive_countingCodingKgramVectorWithSliding(vector<int>& S, int k, countingC
         }
         kgram[k-1] = c_code(lt, eq);
 
+        s_time = clock();
         if( res.find(kgram) == res.end() ){ /* regist the kgram */
             res[kgram] = 1;
         }else{
             res[kgram]++;
         }
+        insertion_duration += (clock() - s_time);
+
     }
+
+    return insertion_duration;
 }//}}}
 
-void kgramVector_NaturalRepresentationAndWindowSliding(vector<int>& S, int k, natRepKgramVector& res){//{{{
+double kgramVector_NaturalRepresentationAndWindowSliding(vector<int>& S, int k, natRepKgramVector& res){//{{{
+    double insertion_duration = 0.;
+    clock_t s_time;
+
     vector<int> substring(k), kgram(k);
     for(int j=0; j<k; j++){ substring[j] = S[j]; } /* slice substring */
     stable_sort(substring.begin(), substring.end()); /* merge sort */
@@ -138,9 +158,7 @@ void kgramVector_NaturalRepresentationAndWindowSliding(vector<int>& S, int k, na
             kgram[j] = kgram[j+1];
             if(S[i-1] > S[i+j] and S[i+j] >= S[i+k-1]){ // utilize the past-head value
                 kgram[j]++;
-            }else if(S[i-1] < S[i+j] and S[i+j] < S[i+k-1]){
-                kgram[j]--;
-            }else if(S[i-1] == S[i+j] and S[i+j] < S[i+k-1]){
+            }else if(S[i-1] <= S[i+j] and S[i+j] < S[i+k-1]){
                 kgram[j]--;
             }
 
@@ -150,12 +168,16 @@ void kgramVector_NaturalRepresentationAndWindowSliding(vector<int>& S, int k, na
         }
         kgram[k-1] = rank; // the new-tail value
 
+        s_time = clock();
         if( res.find(kgram) == res.end() ){ /* regist the kgram */
             res[kgram] = 1;
         }else{
             res[kgram]++;
         }
+        insertion_duration += (clock() - s_time);
     }
+
+    return insertion_duration;
 };//}}}
 
 void kgramVector_SuffixCountingCoding(vector<int>& S, int k, suffixCountingCodingKgramVector& res){//{{{
@@ -181,7 +203,10 @@ void kgramVector_SuffixCountingCoding(vector<int>& S, int k, suffixCountingCodin
     }
 }//}}}
 
-void kgramVector_SuffixCountingCodingAndWindowSliding(vector<int>& S, int k, suffixCountingCodingKgramVector& res){//{{{
+double kgramVector_SuffixCountingCodingAndWindowSliding(vector<int>& S, int k, suffixCountingCodingKgramVector& res){//{{{
+    double insertion_duration = 0.;
+    clock_t s_time;
+
     vector<sc_code> kgram(k);
     for( int j=0; j<k; ++j ){ // the first kgram code(S[0:k-1]) is calcucated naively
         int lt=0, eq=0;
@@ -208,12 +233,16 @@ void kgramVector_SuffixCountingCodingAndWindowSliding(vector<int>& S, int k, suf
         }
         kgram[k-1] = sc_code(0, 0); // the tail of a kgram using SuffixCountingCoding is always (0,0)
 
+        s_time = clock();
         if( res.find(kgram) == res.end() ){ /* regist the kgram */
             res[kgram] = 1;
         }else{
             res[kgram]++;
         }
+        insertion_duration += (clock() - s_time);
     }
+
+    return insertion_duration;
 }//}}}
 
 void kgramVector_CountingCodingAndWindowSlidingWithoutCharacterOracle(//{{{

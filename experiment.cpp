@@ -8,7 +8,6 @@
 #include<stdlib.h>
 #include<string.h>
 #include<math.h>
-#include<ctime>
 
 #include "./WaveletTree.h"
 #include "./RangeCounting.h"
@@ -19,20 +18,15 @@ int comparison_kgram_vector_construct(const int*, int, const int*, int, const in
 
 int main(){
     srand(0);
-    const int length_list[] = {1000,10000,100000};
-    const int sigma_list[] = {100,1000,10000};
+    const int length_list[] = {100000};
+    // const int sigma_list[] = {100,1000,10000};
+    const int sigma_list[] = {1000};
     const int k_list[] = {\
-              100, 200, 300, 400, 500, 600, 700, 800, 900,\
-        1000,1100,1200,1300,1400,1500,1600,1700,1800,1900,\
-        2000,2100,2200,2300,2400,2500,2600,2700,2800,2900,\
-        3000,3100,3200,3300,3400,3500,3600,3700,3800,3900,\
-        4000,4100,4200,4300,4400,4500,4600,4700,4800,4900,\
-        5000,5100,5200,5300,5400,5500,5600,5700,5800,5900,\
-        6000,6100,6200,6300,6400,6500,6600,6700,6800,6900,\
-        7000,7100,7200,7300,7400,7500,7600,7700,7800,7900,\
-        8000,8100,8200,8300,8400,8500,8600,8700,8800,8900,\
-        9000,9100,9200,9300,9400,9500,9600,9700,9800,9900,\
-        10000};
+          2, 3, 4, 5, 6, 7, 8, 9,\
+        10,20,30,40,50,60,70,80,90,\
+        100,200,300,400,500,600,700,800,900,\
+        1000\
+    };
     // const int length_list[] = {10,100,1000,10000};
     // const int sigma_list[] = {10,100,1000,10000};
     // const int k_list[] = {10,100,1000,10000};
@@ -44,7 +38,7 @@ int main(){
     comparison_kgram_vector_construct(
             length_list, length_list_size,
             sigma_list, sigma_list_size,
-            k_list, k_list_size, 1000, 10.0);
+            k_list, k_list_size, 1000, 2.0);
     double all_duration = (clock() - s_time) / (double)CLOCKS_PER_SEC;
     printf("the time to complete the all processing: %.10lf\n", all_duration);
 }
@@ -75,7 +69,8 @@ int comparison_kgram_vector_construct(//{{{
                        rc_sliding_duration = 0.,
                        scc_sliding_duration = 0.,
                        sab_sliding_duration = 0.,
-                       temp = 0.;
+                       temp = 0.,
+                       insertion_duration = 0.;
 
                 // check the processing time takes more than "threshold" sec, only once
                 if( !nat_iterate_flg ){
@@ -104,8 +99,8 @@ int comparison_kgram_vector_construct(//{{{
                     if( nat_iterate_flg ){
                         natRepKgramVector nat_iterate_vec;
                         s_time = clock();
-                        naive_natRepKgramVector(S, k, nat_iterate_vec);
-                        nat_iterate_duration += (clock() - s_time);
+                        insertion_duration = naive_natRepKgramVector(S, k, nat_iterate_vec);
+                        nat_iterate_duration += (clock() - s_time) - insertion_duration;
                     }else{
                         nat_iterate_duration = -(double)CLOCKS_PER_SEC * loop;
                     }
@@ -113,52 +108,52 @@ int comparison_kgram_vector_construct(//{{{
                     {
                         natRepKgramVector nat_slide_vec;
                         s_time = clock();
-                        kgramVector_NaturalRepresentationAndWindowSliding(S, k, nat_slide_vec);
-                        nat_sliding_duration += (clock() - s_time);
+                        insertion_duration = kgramVector_NaturalRepresentationAndWindowSliding(S, k, nat_slide_vec);
+                        nat_sliding_duration += (clock() - s_time) - insertion_duration;
                     }
 
 
                     {
                         countingCodingKgramVector naive_slide_rc_vec;
                         s_time = clock();
-                        naive_countingCodingKgramVectorWithSliding(S, k, naive_slide_rc_vec);
-                        naive_rc_sliding_duration += (clock() - s_time);
+                        insertion_duration = naive_countingCodingKgramVectorWithSliding(S, k, naive_slide_rc_vec);
+                        naive_rc_sliding_duration += (clock() - s_time) - insertion_duration;
                     }
 
                     {
                         countingCodingKgramVector wt_slide_rc_vec;
                         s_time = clock();
-                        wt.createCountingCodingKgramVectorWithSliding(S, k, wt_slide_rc_vec);
-                        wt_sliding_duration += (clock() - s_time);
+                        insertion_duration = wt.createCountingCodingKgramVectorWithSliding(S, k, wt_slide_rc_vec);
+                        wt_sliding_duration += (clock() - s_time) - insertion_duration;
                     }
 
-                    {
-                        countingCodingKgramVector rc_slide_rc_vec;
-                        s_time = clock();
-                        rc.createCountingCodingKgramVectorWithSliding(S, k, rc_slide_rc_vec);
-                        rc_sliding_duration += (clock() - s_time);
-                    }
+                    // {
+                    //     countingCodingKgramVector rc_slide_rc_vec;
+                    //     s_time = clock();
+                    //     rc.createCountingCodingKgramVectorWithSliding(S, k, rc_slide_rc_vec);
+                    //     rc_sliding_duration += (clock() - s_time);
+                    // }
 
-                    {
-                        countingCodingKgramVector naive_slide_wo_oracle_cc_vec;
-                        s_time = clock();
-                        kgramVector_CountingCodingAndWindowSlidingWithoutCharacterOracle(S, k, naive_slide_wo_oracle_cc_vec);
-                        naive_sliding_wo_oracle_duration += (clock() - s_time);
-                    }
+                    // {
+                    //     countingCodingKgramVector naive_slide_wo_oracle_cc_vec;
+                    //     s_time = clock();
+                    //     kgramVector_CountingCodingAndWindowSlidingWithoutCharacterOracle(S, k, naive_slide_wo_oracle_cc_vec);
+                    //     naive_sliding_wo_oracle_duration += (clock() - s_time);
+                    // }
 
                     {
                         s_time = clock();
                         suffixCountingCodingKgramVector scc_slide_vec;
-                        kgramVector_SuffixCountingCodingAndWindowSliding(S, k, scc_slide_vec);
-                        scc_sliding_duration += (clock() - s_time);
+                        insertion_duration = kgramVector_SuffixCountingCodingAndWindowSliding(S, k, scc_slide_vec);
+                        scc_sliding_duration += (clock() - s_time) - insertion_duration;
                     }
 
-                    {
-                        suffixAplhaBetaCodingKgramVector sab_slide_vec;
-                        s_time = clock();
-                        kgramVector_SuffixAlphaBetaCodingWithWindowSliding(S, k, sab_slide_vec);
-                        sab_sliding_duration += (clock() - s_time);
-                    }
+                    // {
+                    //     suffixAplhaBetaCodingKgramVector sab_slide_vec;
+                    //     s_time = clock();
+                    //     kgramVector_SuffixAlphaBetaCodingWithWindowSliding(S, k, sab_slide_vec);
+                    //     sab_sliding_duration += (clock() - s_time);
+                    // }
 
                 }
                 nat_iterate_duration /= (double)CLOCKS_PER_SEC * loop;
