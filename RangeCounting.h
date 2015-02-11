@@ -319,7 +319,7 @@ public:
     int query(int);
     int query(int, int);
     void createCountingCodingKgramVector(vector<int>&, int, countingCodingKgramVector&);
-    void createCountingCodingKgramVectorWithSliding(vector<int>&, int, countingCodingKgramVector&);
+    double createCountingCodingKgramVectorWithSliding(vector<int>&, int, countingCodingKgramVector&);
 };
 vector< vector< pair<UINT_WORD, UINT_WORD> > > *RangeCounting::splitingTable = NULL;
 RangeCounting::RangeCounting(const RangeCounting& rhs)://{{{
@@ -777,7 +777,10 @@ void RangeCounting::createCountingCodingKgramVector(vector<int>& S, int k, count
         }
     }
 };//}}}
-void RangeCounting::createCountingCodingKgramVectorWithSliding(vector<int>& S, int k, countingCodingKgramVector& res){//{{{
+double RangeCounting::createCountingCodingKgramVectorWithSliding(vector<int>& S, int k, countingCodingKgramVector& res){//{{{
+    double insertion_duration = 0.;
+    clock_t s_time;
+
     vector<c_code> kgram(k);
     for( int j=0, lt, eq; j<k; ++j ){ // the first kgram is calcucated naively
         int rc_ij_Sij = query(j);
@@ -807,12 +810,16 @@ void RangeCounting::createCountingCodingKgramVectorWithSliding(vector<int>& S, i
                     query(i+k-1, S[i+k-1]+1) - query(i, S[i+k-1]+1) - rc_ij_Sij + rc_i_Sij
                 );
 
+        s_time = clock();
         if( res.find(kgram) == res.end() ){ /* regist the kgram */
             res[kgram] = 1;
         }else{
             res[kgram]++;
         }
+        insertion_duration += (clock() - s_time);
     }
+
+    return insertion_duration;
 };//}}}
 
 /* vim:set foldmethod=marker commentstring=//%s : */
