@@ -20,13 +20,13 @@ int comparison_kgram_vector_construct(const int*, int, const int*, int, const in
 int main(){
     srand(0);
     const int length_list[] = {100000};
-    const int sigma_list[] = {1000};
-    const int k_list[] = {\
+    const int sigma_list[] = {\
         1, 2, 3, 4, 5, 6, 7, 8, 9,\
         10, 20, 30, 40, 50, 60, 70, 80, 90,\
         100, 200, 300, 400, 500, 600, 700, 800, 900,\
         1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000,\
         10000};
+    const int k_list[] = {100, 1000};
     int length_list_size = sizeof(length_list) / sizeof(length_list[0]),
         sigma_list_size = sizeof(sigma_list) / sizeof(sigma_list[0]),
         k_list_size = sizeof(k_list) / sizeof(k_list[0]);
